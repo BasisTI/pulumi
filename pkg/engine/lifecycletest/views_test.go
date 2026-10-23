@@ -181,7 +181,7 @@ func TestViewsBasic(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		if creating {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: ins,
+				Inputs: resource.FromResourcePropertyMap(ins),
 			})
 			require.NoError(t, err)
 		}
@@ -383,7 +383,7 @@ func TestViewsUpdateError(t *testing.T) {
 	expectError := false
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: ins,
+			Inputs: resource.FromResourcePropertyMap(ins),
 		})
 		if expectError {
 			return nil
@@ -539,7 +539,7 @@ func TestViewsUpdateDelete(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		if creating {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: ins,
+				Inputs: resource.FromResourcePropertyMap(ins),
 			})
 			require.NoError(t, err)
 		}
@@ -1611,7 +1611,7 @@ func TestViewsDeleteBeforeReplace(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		if creating {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: ins,
+				Inputs: resource.FromResourcePropertyMap(ins),
 			})
 			require.NoError(t, err)
 		}
@@ -1819,7 +1819,7 @@ func TestViewsCreateBeforeReplace(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		if creating {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: ins,
+				Inputs: resource.FromResourcePropertyMap(ins),
 			})
 			require.NoError(t, err)
 		}
@@ -2439,9 +2439,9 @@ func TestViewsDestroyPreview(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 

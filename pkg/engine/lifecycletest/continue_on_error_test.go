@@ -284,7 +284,7 @@ func TestUpContinueOnErrorUpdate(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		require.NoError(t, err)
 		if update {
@@ -296,7 +296,7 @@ func TestUpContinueOnErrorUpdate(t *testing.T) {
 
 		resp2, err := monitor.RegisterResource("pkgB:m:typB", "failing2", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		require.NoError(t, err)
 		if update {
@@ -422,7 +422,7 @@ func TestUpContinueOnErrorUpdateWithRefresh(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		require.NoError(t, err)
 		if update {
@@ -596,7 +596,7 @@ func TestUpContinueOnErrorUpdateNoSDKSupport(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: false,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		if update {
 			assert.ErrorContains(t, err, "resource registration failed")
@@ -751,7 +751,7 @@ func TestContinueOnErrorImport(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:   resource.PropertyMap{},
+			Inputs:   resource.FromResourcePropertyMap(resource.PropertyMap{}),
 			ImportID: resource.ID("id"),
 		})
 		assert.ErrorContains(t, err, "resource registration failed")
@@ -1073,7 +1073,7 @@ func TestUpContinueOnErrorSkippedReadReturnsOldState(t *testing.T) {
 		// A resource whose update fails on the second run.
 		failingResp, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		require.NoError(t, err)
 
@@ -1300,7 +1300,7 @@ func TestUpContinueOnErrorSkipsCheckForFailedDependency(t *testing.T) {
 
 		dependent, err := monitor.RegisterResource("pkgA:m:typA", "dependent", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"value": resource.MakeComputed(resource.NewProperty(""))},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.MakeComputed(resource.NewProperty(""))}),
 			PropertyDeps:            map[resource.PropertyKey][]resource.URN{"value": {failing.URN}},
 		})
 		require.NoError(t, err)
@@ -1308,7 +1308,7 @@ func TestUpContinueOnErrorSkipsCheckForFailedDependency(t *testing.T) {
 
 		independent, err := monitor.RegisterResource("pkgA:m:typA", "independent", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"value": resource.NewProperty("hello")},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.NewProperty("hello")}),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, pulumirpc.Result_SUCCESS, independent.Result)
@@ -1374,7 +1374,7 @@ func TestUpContinueOnErrorSkipsDiffForFailedDependency(t *testing.T) {
 		run++
 		failing, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"run": resource.NewProperty(float64(run))},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"run": resource.NewProperty(float64(run))}),
 		})
 		require.NoError(t, err)
 
@@ -1384,7 +1384,7 @@ func TestUpContinueOnErrorSkipsDiffForFailedDependency(t *testing.T) {
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typA", "dependent", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"value": value},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"value": value}),
 			PropertyDeps:            map[resource.PropertyKey][]resource.URN{"value": {failing.URN}},
 		})
 		require.NoError(t, err)
@@ -1543,7 +1543,7 @@ func TestUpContinueOnErrorSkipsPlanCheckForFailedDependency(t *testing.T) {
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "dependent", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"value": resource.MakeComputed(resource.NewProperty(""))},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.MakeComputed(resource.NewProperty(""))}),
 			PropertyDeps:            map[resource.PropertyKey][]resource.URN{"value": {failing.URN}},
 		})
 		require.NoError(t, err)
@@ -1595,7 +1595,7 @@ func TestUpContinueOnErrorExplicitProviderUpdateFailsKeepsDependent(t *testing.T
 		provResp, err := monitor.RegisterResource(
 			providers.MakeProviderType("pkgA"), "explicitProv", true, deploytest.ResourceOptions{
 				SupportsResultReporting: true,
-				Inputs:                  resource.PropertyMap{"run": resource.NewProperty(float64(run))},
+				Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"run": resource.NewProperty(float64(run))}),
 			})
 		require.NoError(t, err)
 
@@ -1605,7 +1605,7 @@ func TestUpContinueOnErrorExplicitProviderUpdateFailsKeepsDependent(t *testing.T
 		_, err = monitor.RegisterResource("pkgA:m:typA", "usesExplicit", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
 			Provider:                provRef.String(),
-			Inputs:                  resource.PropertyMap{"value": resource.NewProperty("hello")},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.NewProperty("hello")}),
 		})
 		require.NoError(t, err)
 
@@ -1674,7 +1674,7 @@ func TestUpContinueOnErrorSkippedComponentRegistersOutputs(t *testing.T) {
 		run++
 		failing, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"run": resource.NewProperty(float64(run))},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"run": resource.NewProperty(float64(run))}),
 		})
 		require.NoError(t, err)
 
@@ -1688,7 +1688,7 @@ func TestUpContinueOnErrorSkippedComponentRegistersOutputs(t *testing.T) {
 		if failing.Result != pulumirpc.Result_SUCCESS {
 			out = resource.MakeComputed(resource.NewProperty(""))
 		}
-		err = monitor.RegisterResourceOutputs(comp.URN, resource.PropertyMap{"out": out})
+		err = monitor.RegisterResourceOutputs(comp.URN, resource.FromResourcePropertyMap(resource.PropertyMap{"out": out}))
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "independent", true, deploytest.ResourceOptions{
@@ -1787,7 +1787,7 @@ func TestUpContinueOnErrorSkippedCreatePreviewPropagatesMixedOutputs(t *testing.
 			"pkgA:m:typA", "dependentOnFailing", true, deploytest.ResourceOptions{
 				SupportsResultReporting: true,
 				Dependencies:            []resource.URN{failingResp.URN},
-				Inputs:                  previewInputs,
+				Inputs:                  resource.FromResourcePropertyMap(previewInputs),
 			})
 		require.NoError(t, err)
 		assert.Equal(t, pulumirpc.Result_SUCCESS, depResp.Result)
@@ -1796,10 +1796,10 @@ func TestUpContinueOnErrorSkippedCreatePreviewPropagatesMixedOutputs(t *testing.
 		// The known output should come through as a concrete value; the unknown one should be
 		// preserved as computed so the SDK can propagate it.
 		require.Contains(t, depResp.Outputs, resource.PropertyKey("knownOut"))
-		assert.Equal(t, resource.NewProperty("hello"), depResp.Outputs["knownOut"])
+		assert.Equal(t, resource.NewProperty("hello"), resource.ToResourcePropertyMap(depResp.Outputs)["knownOut"])
 		require.Contains(t, depResp.Outputs, resource.PropertyKey("unknownOut"))
-		assert.True(t, depResp.Outputs["unknownOut"].IsComputed(),
-			"expected unknownOut to be computed, got %v", depResp.Outputs["unknownOut"])
+		assert.True(t, resource.ToResourcePropertyMap(depResp.Outputs)["unknownOut"].IsComputed(),
+			"expected unknownOut to be computed, got %v", resource.ToResourcePropertyMap(depResp.Outputs)["unknownOut"])
 
 		return nil
 	})
@@ -1867,7 +1867,7 @@ func TestUpContinueOnErrorSkippedUpdatePreviewPropagatesMixedOutputs(t *testing.
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		failingResp, err := monitor.RegisterResource("pkgB:m:typB", "failing", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  ins,
+			Inputs:                  resource.FromResourcePropertyMap(ins),
 		})
 		require.NoError(t, err)
 		if update {
@@ -1878,16 +1878,16 @@ func TestUpContinueOnErrorSkippedUpdatePreviewPropagatesMixedOutputs(t *testing.
 			"pkgA:m:typA", "dependentOnFailing", true, deploytest.ResourceOptions{
 				SupportsResultReporting: true,
 				Dependencies:            []resource.URN{failingResp.URN},
-				Inputs:                  ins,
+				Inputs:                  resource.FromResourcePropertyMap(ins),
 			})
 		require.NoError(t, err)
 		if update {
 			assert.Equal(t, pulumirpc.Result_SUCCESS, depResp.Result)
 			assert.True(t, depResp.Unknown, "expected Unknown=true on skipped dependent update")
 			require.Contains(t, depResp.Outputs, resource.PropertyKey("knownOut"))
-			assert.Equal(t, resource.NewProperty("hello"), depResp.Outputs["knownOut"])
+			assert.Equal(t, resource.NewProperty("hello"), resource.ToResourcePropertyMap(depResp.Outputs)["knownOut"])
 			require.Contains(t, depResp.Outputs, resource.PropertyKey("unknownOut"))
-			assert.True(t, depResp.Outputs["unknownOut"].IsComputed())
+			assert.True(t, resource.ToResourcePropertyMap(depResp.Outputs)["unknownOut"].IsComputed())
 		}
 		return nil
 	})

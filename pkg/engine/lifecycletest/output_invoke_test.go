@@ -93,7 +93,7 @@ func TestInvokeArgsOutputValuesForwardedToAcceptingProvider(t *testing.T) {
 		require.NoError(t, err)
 
 		args := makeArgsWithOutputValue([]resource.URN{resp.URN}, resource.NewProperty("v"), true /*known*/)
-		_, _, err = monitor.Invoke("pkgA:index:f", args, "", "", "",
+		_, _, err = monitor.Invoke("pkgA:index:f", resource.FromResourcePropertyMap(args), "", "", "",
 			deploytest.InvokeOptions{KeepArgOutputValues: true})
 		require.NoError(t, err)
 		return nil
@@ -142,7 +142,7 @@ func TestInvokeArgsOutputValuesDowngradedForLegacyProvider(t *testing.T) {
 		require.NoError(t, err)
 
 		args := makeArgsWithOutputValue([]resource.URN{resp.URN}, resource.NewProperty("v"), true)
-		_, _, err = monitor.Invoke("pkgA:index:f", args, "", "", "",
+		_, _, err = monitor.Invoke("pkgA:index:f", resource.FromResourcePropertyMap(args), "", "", "",
 			deploytest.InvokeOptions{KeepArgOutputValues: true})
 		require.NoError(t, err)
 		return nil
@@ -190,11 +190,11 @@ func TestInvokeReturnOutputValuesToAcceptingSDK(t *testing.T) {
 		require.NoError(t, err)
 		providerURN = resp.URN
 
-		ret, _, err := monitor.Invoke("pkgA:index:f", nil, "", "", "",
+		ret, _, err := monitor.Invoke("pkgA:index:f", resource.FromResourcePropertyMap(nil), "", "", "",
 			deploytest.InvokeOptions{AcceptOutputValues: true})
 		require.NoError(t, err)
 
-		got, ok := ret["out"]
+		got, ok := resource.ToResourcePropertyMap(ret)["out"]
 		require.True(t, ok)
 		require.True(t, got.IsOutput(), "expected the SDK to receive an OutputValue in the response")
 		output := got.OutputValue()
@@ -236,10 +236,10 @@ func TestInvokeReturnOutputValuesDowngradedForLegacySDK(t *testing.T) {
 	}
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		ret, _, err := monitor.Invoke("pkgA:index:f", nil, "", "", "" /* no InvokeOptions => AcceptOutputValues=false */)
+		ret, _, err := monitor.Invoke("pkgA:index:f", resource.FromResourcePropertyMap(nil), "", "", "" /* no InvokeOptions => AcceptOutputValues=false */)
 		require.NoError(t, err)
 
-		got, ok := ret["out"]
+		got, ok := resource.ToResourcePropertyMap(ret)["out"]
 		require.True(t, ok)
 		assert.False(t, got.IsOutput(),
 			"the SDK should not receive an OutputValue when AcceptOutputValues is false")
@@ -299,11 +299,11 @@ func TestInvokeLegacyProviderRehydratesReturnDependencies(t *testing.T) {
 				Dependencies: []resource.URN{respB.URN},
 			}),
 		}
-		ret, _, err := monitor.Invoke("pkgA:index:f", args, "", "", "",
+		ret, _, err := monitor.Invoke("pkgA:index:f", resource.FromResourcePropertyMap(args), "", "", "",
 			deploytest.InvokeOptions{KeepArgOutputValues: true, AcceptOutputValues: true})
 		require.NoError(t, err)
 
-		got, ok := ret["out"]
+		got, ok := resource.ToResourcePropertyMap(ret)["out"]
 		require.True(t, ok)
 		require.True(t, got.IsOutput(),
 			"engine should have re-hydrated the return as an OutputValue because the provider did not preserve deps")

@@ -98,7 +98,7 @@ func TestDestroyWithProgram(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: programInputs,
+			Inputs: resource.FromResourcePropertyMap(programInputs),
 		})
 		require.NoError(t, err)
 		// Should see the create outputs both times we run this program
@@ -107,7 +107,7 @@ func TestDestroyWithProgram(t *testing.T) {
 		// Only register resB on the first run
 		if programExecutions == 1 {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs: programInputs,
+				Inputs: resource.FromResourcePropertyMap(programInputs),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, createOutputs, resp.Outputs)
@@ -206,7 +206,7 @@ func TestTargetedDestroyWithProgram(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: programInputs,
+			Inputs: resource.FromResourcePropertyMap(programInputs),
 		})
 		require.NoError(t, err)
 		// Should see the create outputs both times we run this program
@@ -215,7 +215,7 @@ func TestTargetedDestroyWithProgram(t *testing.T) {
 		// Only register resB on the first run
 		if programExecutions == 1 {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs: programInputs,
+				Inputs: resource.FromResourcePropertyMap(programInputs),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, createOutputs, resp.Outputs)
@@ -335,7 +335,7 @@ func TestProviderUpdateDestroyWithProgram(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:  programInputs,
+			Inputs:  resource.FromResourcePropertyMap(programInputs),
 			Version: pkgVersion,
 		})
 		require.NoError(t, err)
@@ -345,7 +345,7 @@ func TestProviderUpdateDestroyWithProgram(t *testing.T) {
 		// Only register resB on the first run
 		if programExecutions == 1 {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:  programInputs,
+				Inputs:  resource.FromResourcePropertyMap(programInputs),
 				Version: pkgVersion,
 			})
 			require.NoError(t, err)
@@ -461,7 +461,7 @@ func TestExplicitProviderUpdateDestroyWithProgram(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:   programInputs,
+			Inputs:   resource.FromResourcePropertyMap(programInputs),
 			Provider: provRef.String(),
 		})
 		require.NoError(t, err)
@@ -471,7 +471,7 @@ func TestExplicitProviderUpdateDestroyWithProgram(t *testing.T) {
 		// Only register resB on the first run
 		if programExecutions == 1 {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:   programInputs,
+				Inputs:   resource.FromResourcePropertyMap(programInputs),
 				Provider: provRef.String(),
 			})
 			require.NoError(t, err)
@@ -575,7 +575,7 @@ func TestDestroyWithProgramWithComponents(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: programInputs,
+			Inputs: resource.FromResourcePropertyMap(programInputs),
 			Parent: resp.URN,
 		})
 		require.NoError(t, err)
@@ -669,7 +669,7 @@ func TestDestroyWithProgramWithSkippedComponents(t *testing.T) {
 		if programExecutions == 1 {
 			// First execution just create a custom resource
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: programInputs,
+				Inputs: resource.FromResourcePropertyMap(programInputs),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, createOutputs, resp.Outputs)
@@ -690,7 +690,7 @@ func TestDestroyWithProgramWithSkippedComponents(t *testing.T) {
 
 			// And then create the original custom resource as a child of the component, remember to alias it
 			resp, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs:       programInputs,
+				Inputs:       resource.FromResourcePropertyMap(programInputs),
 				Dependencies: []resource.URN{resp.URN},
 			})
 			require.NoError(t, err)
@@ -784,7 +784,7 @@ func TestDestroyWithProgramWithSkippedAlias(t *testing.T) {
 		if programExecutions == 1 {
 			// First execution just create a custom resource
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: programInputs,
+				Inputs: resource.FromResourcePropertyMap(programInputs),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, createOutputs, resp.Outputs)
@@ -798,7 +798,7 @@ func TestDestroyWithProgramWithSkippedAlias(t *testing.T) {
 
 			// And then create the original custom resource as a child of the component, remember to alias it
 			resp, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: programInputs,
+				Inputs: resource.FromResourcePropertyMap(programInputs),
 				Parent: resp.URN,
 				Aliases: []*pulumirpc.Alias{
 					{
@@ -926,7 +926,7 @@ func TestDestroyWithProgramResourceRead(t *testing.T) {
 			"resA",
 			"id",
 			"",
-			resource.PropertyMap{},
+			resource.FromResourcePropertyMap(resource.PropertyMap{}),
 			"",
 			"",
 			"",
@@ -938,7 +938,7 @@ func TestDestroyWithProgramResourceRead(t *testing.T) {
 		assert.Equal(t, readOutputs, state)
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: programInputs,
+			Inputs: resource.FromResourcePropertyMap(programInputs),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, createOutputs, resp.Outputs)

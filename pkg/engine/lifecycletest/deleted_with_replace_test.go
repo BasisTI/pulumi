@@ -29,6 +29,7 @@ import (
 	"github.com/pulumi/pulumi/pkg/v3/resource/stack/snapshot"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/providers"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"github.com/stretchr/testify/require"
 )
 
@@ -76,12 +77,12 @@ func TestDeletedWithDependentReplacedOnDeleteBeforeReplace(t *testing.T) {
 	})
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: ins})
+		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(ins)})
 		require.NoError(t, err)
 
 		// resD's own inputs never change, but it must replace whenever resT does.
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resD", true, deploytest.ResourceOptions{
-			Inputs:      resource.NewPropertyMapFromMap(map[string]any{"fixed": "property"}),
+			Inputs:      property.NewMap(map[string]property.Value{"fixed": property.New("property")}),
 			DeletedWith: respT.URN,
 		})
 		require.NoError(t, err)
@@ -167,17 +168,17 @@ func TestDeletedWithTransitiveChain(t *testing.T) {
 	})
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: ins})
+		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(ins)})
 		require.NoError(t, err)
 
 		respD, err := monitor.RegisterResource("pkgA:m:typA", "resD", true, deploytest.ResourceOptions{
-			Inputs:      resource.NewPropertyMapFromMap(map[string]any{"fixed": "property"}),
+			Inputs:      property.NewMap(map[string]property.Value{"fixed": property.New("property")}),
 			DeletedWith: respT.URN,
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resD2", true, deploytest.ResourceOptions{
-			Inputs:      resource.NewPropertyMapFromMap(map[string]any{"fixed2": "property"}),
+			Inputs:      property.NewMap(map[string]property.Value{"fixed2": property.New("property")}),
 			DeletedWith: respD.URN,
 		})
 		require.NoError(t, err)
@@ -265,11 +266,11 @@ func TestDeletedWithDependentReplacedOnCreateBeforeDelete(t *testing.T) {
 	})
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: ins})
+		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(ins)})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resD", true, deploytest.ResourceOptions{
-			Inputs:      resource.NewPropertyMapFromMap(map[string]any{"fixed": "property"}),
+			Inputs:      property.NewMap(map[string]property.Value{"fixed": property.New("property")}),
 			DeletedWith: respT.URN,
 		})
 		require.NoError(t, err)
@@ -355,11 +356,11 @@ func TestDeletedWithAddedSameStepAsReplace(t *testing.T) {
 	linkD := false
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: ins})
+		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(ins)})
 		require.NoError(t, err)
 
 		opts := deploytest.ResourceOptions{
-			Inputs: resource.NewPropertyMapFromMap(map[string]any{"fixed": "property"}),
+			Inputs: property.NewMap(map[string]property.Value{"fixed": property.New("property")}),
 		}
 		if linkD {
 			opts.DeletedWith = respT.URN
@@ -514,14 +515,14 @@ func TestDeletedWithProtectedDependentBlocksReplace(t *testing.T) {
 	})
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: ins})
+		respT, err := monitor.RegisterResource("pkgA:m:typA", "resT", true, deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(ins)})
 		if err != nil {
 			return err
 		}
 
 		protect := true
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resD", true, deploytest.ResourceOptions{
-			Inputs:      resource.NewPropertyMapFromMap(map[string]any{"fixed": "property"}),
+			Inputs:      property.NewMap(map[string]property.Value{"fixed": property.New("property")}),
 			DeletedWith: respT.URN,
 			Protect:     &protect,
 		})

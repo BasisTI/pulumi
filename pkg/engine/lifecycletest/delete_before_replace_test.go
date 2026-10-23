@@ -40,6 +40,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 )
 
 type propertyDependencies map[resource.PropertyKey][]resource.URN
@@ -116,7 +117,7 @@ func generateComplexTestDependencyGraph(
 		register := func(urn resource.URN, provider string, inputs resource.PropertyMap) resource.ID {
 			resp, err := monitor.RegisterResource(urn.Type(), urn.Name(), true, deploytest.ResourceOptions{
 				Provider: provider,
-				Inputs:   inputs,
+				Inputs:   resource.FromResourcePropertyMap(inputs),
 			})
 			require.NoError(t, err)
 			return resp.ID
@@ -246,7 +247,7 @@ func TestPropertyDependenciesAdapter(t *testing.T) {
 			dependencies []resource.URN,
 		) resource.URN {
 			resp, err := monitor.RegisterResource(resType, name, true, deploytest.ResourceOptions{
-				Inputs:       inputs,
+				Inputs:       resource.FromResourcePropertyMap(inputs),
 				Dependencies: dependencies,
 				PropertyDeps: inputDeps,
 			})
@@ -326,7 +327,7 @@ func TestPropertyDependenciesBackfillDoesNotLeakAcrossProperties(t *testing.T) {
 		// dependencies and then merges the Output-value dependencies in. propA should depend only on A and
 		// propB only on B.
 		respC, err := monitor.RegisterResource(resType, "C", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"propA": resource.NewProperty(resource.Output{
 					Element:      resource.NewProperty("a"),
 					Known:        true,
@@ -337,7 +338,7 @@ func TestPropertyDependenciesBackfillDoesNotLeakAcrossProperties(t *testing.T) {
 					Known:        true,
 					Dependencies: []resource.URN{urnB},
 				}),
-			},
+			}),
 			KeepOutputValues: true,
 		})
 		require.NoError(t, err)
@@ -403,7 +404,7 @@ func TestExplicitDeleteBeforeReplace(t *testing.T) {
 
 		respA, err := monitor.RegisterResource(resType, "resA", true, deploytest.ResourceOptions{
 			Provider:            provA,
-			Inputs:              inputsA,
+			Inputs:              resource.FromResourcePropertyMap(inputsA),
 			DeleteBeforeReplace: dbrA,
 		})
 		require.NoError(t, err)
@@ -412,7 +413,7 @@ func TestExplicitDeleteBeforeReplace(t *testing.T) {
 		inputDepsB := map[resource.PropertyKey][]resource.URN{"A": {urnA}}
 		respB, err := monitor.RegisterResource(resType, "resB", true, deploytest.ResourceOptions{
 			Provider:     provA,
-			Inputs:       inputsB,
+			Inputs:       resource.FromResourcePropertyMap(inputsB),
 			Dependencies: []resource.URN{urnA},
 			PropertyDeps: inputDepsB,
 		})
@@ -615,14 +616,14 @@ func TestDependencyChangeDBR(t *testing.T) {
 	var urnA, urnB resource.URN
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(resType, "resA", true, deploytest.ResourceOptions{
-			Inputs: inputsA,
+			Inputs: resource.FromResourcePropertyMap(inputsA),
 		})
 		require.NoError(t, err)
 		urnA = resp.URN
 
 		inputDepsB := map[resource.PropertyKey][]resource.URN{"A": {urnA}}
 		resp, err = monitor.RegisterResource(resType, "resB", true, deploytest.ResourceOptions{
-			Inputs:       inputsB,
+			Inputs:       resource.FromResourcePropertyMap(inputsB),
 			Dependencies: []resource.URN{urnA},
 			PropertyDeps: inputDepsB,
 		})
@@ -640,13 +641,13 @@ func TestDependencyChangeDBR(t *testing.T) {
 	inputsA["A"] = resource.NewProperty("bar")
 	programF = deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(resType, "resB", true, deploytest.ResourceOptions{
-			Inputs: inputsB,
+			Inputs: resource.FromResourcePropertyMap(inputsB),
 		})
 		require.NoError(t, err)
 		urnB = resp.URN
 
 		resp, err = monitor.RegisterResource(resType, "resA", true, deploytest.ResourceOptions{
-			Inputs: inputsA,
+			Inputs: resource.FromResourcePropertyMap(inputsA),
 		})
 		require.NoError(t, err)
 		urnA = resp.URN
@@ -725,14 +726,14 @@ func TestDBRProtect(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		respA, err := monitor.RegisterResource(resType, "resA", true, deploytest.ResourceOptions{
-			Inputs: inputsA,
+			Inputs: resource.FromResourcePropertyMap(inputsA),
 		})
 
 		if err == nil {
 			inputDepsB := map[resource.PropertyKey][]resource.URN{"A": {respA.URN}}
 			protect := true
 			_, err := monitor.RegisterResource(resType, "resB", true, deploytest.ResourceOptions{
-				Inputs:       inputsB,
+				Inputs:       resource.FromResourcePropertyMap(inputsB),
 				Dependencies: []resource.URN{respA.URN},
 				PropertyDeps: inputDepsB,
 				Protect:      &protect,
@@ -804,15 +805,15 @@ func TestDBRReplaceOnChanges(t *testing.T) {
 	}
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		respA, err := monitor.RegisterResource("pkgA:index:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: inputsA,
+			Inputs: resource.FromResourcePropertyMap(inputsA),
 		})
 		require.NoError(t, err)
 
 		inputDepsB := map[resource.PropertyKey][]resource.URN{"value": {respA.URN}}
 		_, err = monitor.RegisterResource("pkgA:index:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
-				"value": respA.Outputs["value"],
-			},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
+				"value": resource.ToResourcePropertyMap(respA.Outputs)["value"],
+			}),
 			Dependencies:     []resource.URN{respA.URN},
 			PropertyDeps:     inputDepsB,
 			ReplaceOnChanges: []string{"value"},
@@ -961,12 +962,12 @@ func TestDBRParallel(t *testing.T) {
 			// First update just create the two resources.
 			program = func(monitor *deploytest.ResourceMonitor) error {
 				respA, err := monitor.RegisterResource("pkgA:index:typ", "resA", true, deploytest.ResourceOptions{
-					Inputs: resource.NewPropertyMapFromMap(map[string]any{"A": "foo"}),
+					Inputs: property.NewMap(map[string]property.Value{"A": property.New("foo")}),
 				})
 				require.NoError(t, err)
 
 				_, err = monitor.RegisterResource("pkgA:index:typ", "resB", true, deploytest.ResourceOptions{
-					Inputs:       resource.NewPropertyMapFromMap(map[string]any{"A": "foo"}),
+					Inputs:       property.NewMap(map[string]property.Value{"A": property.New("foo")}),
 					Dependencies: []resource.URN{respA.URN},
 					PropertyDeps: map[resource.PropertyKey][]resource.URN{"A": {respA.URN}},
 				})
@@ -985,7 +986,7 @@ func TestDBRParallel(t *testing.T) {
 
 				go func() {
 					_, err := monitor.RegisterResource("pkgA:index:typ", "resA", true, deploytest.ResourceOptions{
-						Inputs: resource.NewPropertyMapFromMap(map[string]any{"A": "bar"}),
+						Inputs: property.NewMap(map[string]property.Value{"A": property.New("bar")}),
 					})
 					require.NoError(t, err)
 					wg.Done()
@@ -993,7 +994,7 @@ func TestDBRParallel(t *testing.T) {
 
 				go func() {
 					_, err = monitor.RegisterResource("pkgA:index:typ", "resB", true, deploytest.ResourceOptions{
-						Inputs: resource.NewPropertyMapFromMap(map[string]any{"A": "bar"}),
+						Inputs: property.NewMap(map[string]property.Value{"A": property.New("bar")}),
 					})
 					require.NoError(t, err)
 					wg.Done()
@@ -1099,7 +1100,7 @@ func TestDBRProviderUpgrade(t *testing.T) {
 		resBPromise := promise.Run(func() (*deploytest.RegisterResourceResponse, error) {
 			dbr := true
 			return monitor.RegisterResource("pkgB:m:typB", "resB", true, deploytest.ResourceOptions{
-				Inputs:              resource.PropertyMap{"length": resource.NewProperty(length)},
+				Inputs:              resource.FromResourcePropertyMap(resource.PropertyMap{"length": resource.NewProperty(length)}),
 				DeleteBeforeReplace: &dbr,
 			})
 		})
@@ -1122,7 +1123,7 @@ func TestDBRProviderUpgrade(t *testing.T) {
 
 			return monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
 				Provider:     provRef.String(),
-				Inputs:       resource.PropertyMap{"foo": resource.NewProperty("foo")},
+				Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("foo")}),
 				PropertyDeps: map[resource.PropertyKey][]resource.URN{"foo": {resB.URN}},
 			})
 		})

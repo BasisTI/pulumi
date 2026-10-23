@@ -1714,7 +1714,7 @@ func generateParentedTestDependencyGraph(t *testing.T, p *lt.TestPlan) (
 					urn.Name(),
 					urn.Type() != resTypeComponent,
 					deploytest.ResourceOptions{
-						Inputs: nil,
+						Inputs: property.Map{},
 						Parent: parent,
 					})
 				require.NoError(t, err)
@@ -1973,16 +1973,16 @@ func TestEnsureUntargetedSame(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("foo"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
@@ -2056,12 +2056,12 @@ func TestUntargetedSameWithInFlightTargetedDependency(t *testing.T) {
 
 		if !targetedStep {
 			respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("v1")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("v1")}),
 			})
 			require.NoError(t, err)
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:       resource.PropertyMap{"bar": resource.NewProperty("v1")},
+				Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"bar": resource.NewProperty("v1")}),
 				Dependencies: []resource.URN{respA.URN},
 			})
 			require.NoError(t, err)
@@ -2074,7 +2074,7 @@ func TestUntargetedSameWithInFlightTargetedDependency(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			_, errA = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("v2")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("v2")}),
 			})
 		}()
 
@@ -2084,7 +2084,7 @@ func TestUntargetedSameWithInFlightTargetedDependency(t *testing.T) {
 		go func() {
 			defer close(bDone)
 			_, errB = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"bar": resource.NewProperty("v1")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"bar": resource.NewProperty("v1")}),
 			})
 		}()
 
@@ -2171,18 +2171,18 @@ func TestUntargetedSameWithDependencyRemovedFromProgram(t *testing.T) {
 
 		if !removedStep {
 			respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"p": resource.NewProperty("v1")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"p": resource.NewProperty("v1")}),
 			})
 			require.NoError(t, err)
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:       resource.PropertyMap{"prop": resource.NewProperty("from-a")},
+				Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty("from-a")}),
 				Dependencies: []resource.URN{respA.URN},
 			})
 			require.NoError(t, err)
 		} else {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"prop": resource.NewProperty(1.0)},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty(1.0)}),
 			})
 			require.NoError(t, err)
 		}
@@ -2192,7 +2192,7 @@ func TestUntargetedSameWithDependencyRemovedFromProgram(t *testing.T) {
 			inputC = "v2"
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resC", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty(inputC)},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty(inputC)}),
 		})
 		require.NoError(t, err)
 		return nil
@@ -2264,12 +2264,12 @@ func TestUntargetedSameWithReversedProgramDependency(t *testing.T) {
 
 		if !reversed {
 			respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"p": resource.NewProperty("v1")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"p": resource.NewProperty("v1")}),
 			})
 			require.NoError(t, err)
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:       resource.PropertyMap{"prop": resource.NewProperty("v1")},
+				Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty("v1")}),
 				Dependencies: []resource.URN{respA.URN},
 			})
 			require.NoError(t, err)
@@ -2277,12 +2277,12 @@ func TestUntargetedSameWithReversedProgramDependency(t *testing.T) {
 		}
 
 		respB, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{"prop": resource.NewProperty("v2")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty("v2")}),
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:       resource.PropertyMap{"p": resource.NewProperty("v2")},
+			Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"p": resource.NewProperty("v2")}),
 			Dependencies: []resource.URN{respB.URN},
 		})
 		require.NoError(t, err)
@@ -2347,12 +2347,12 @@ func TestUntargetedSameWithReversedProgramDependencyTargetingDependent(t *testin
 
 		if !reversed {
 			respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"p": resource.NewProperty("v1")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"p": resource.NewProperty("v1")}),
 			})
 			require.NoError(t, err)
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:       resource.PropertyMap{"prop": resource.NewProperty("v1")},
+				Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty("v1")}),
 				Dependencies: []resource.URN{respA.URN},
 			})
 			require.NoError(t, err)
@@ -2360,14 +2360,14 @@ func TestUntargetedSameWithReversedProgramDependencyTargetingDependent(t *testin
 		}
 
 		respB, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{"prop": resource.NewProperty("v2")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"prop": resource.NewProperty("v2")}),
 		})
 		require.NoError(t, err)
 
 		// The deployment bails on this registration; the response may error or never arrive, so
 		// nothing after this may touch t.
 		_, _ = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:       resource.PropertyMap{"p": resource.NewProperty("v2")},
+			Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"p": resource.NewProperty("v2")}),
 			Dependencies: []resource.URN{respB.URN},
 		})
 		return nil
@@ -2427,9 +2427,9 @@ func TestReplaceSpecificTargetsPlan(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty(fooVal),
-			},
+			}),
 			ReplaceOnChanges: []string{"foo"},
 		})
 		require.NoError(t, err)
@@ -2437,16 +2437,16 @@ func TestReplaceSpecificTargetsPlan(t *testing.T) {
 		if createResB {
 			// Now try to create resB which is not targeted and should show up in the plan.
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"foo": resource.NewProperty(fooVal),
-				},
+				}),
 			})
 			require.NoError(t, err)
 		}
 
-		err = monitor.RegisterResourceOutputs(resp.URN, resource.PropertyMap{
+		err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(resource.PropertyMap{
 			"foo": resource.NewProperty(fooVal),
-		})
+		}))
 
 		require.NoError(t, err)
 
@@ -2851,7 +2851,7 @@ func TestTargetUntargetedParent(t *testing.T) {
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "child", true, deploytest.ResourceOptions{
 				Parent: resp.URN,
-				Inputs: inputs,
+				Inputs: resource.FromResourcePropertyMap(inputs),
 			})
 			if expectError {
 				return nil
@@ -3306,11 +3306,11 @@ func TestDependencyUnreleatedToTargetUpdatedSucceeds(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "target", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 		_, err = monitor.RegisterResource("pkgA:m:typA", "unrelated", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
@@ -3321,18 +3321,18 @@ func TestDependencyUnreleatedToTargetUpdatedSucceeds(t *testing.T) {
 		_, err := monitor.RegisterResource("pulumi:pulumi:Stack", "test", false)
 		require.NoError(t, err)
 		_, err = monitor.RegisterResource("pkgA:m:typA", "target", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "dep", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 		_, err = monitor.RegisterResource("pkgA:m:typA", "unrelated", true, deploytest.ResourceOptions{
 			Dependencies: []resource.URN{
 				resp.URN,
 			},
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 		return nil
@@ -3396,7 +3396,7 @@ func TestTargetUntargetedParentWithUpdatedDependency(t *testing.T) {
 
 			_, err = monitor.RegisterResource("pkgA:m:typA", "child", true, deploytest.ResourceOptions{
 				Parent: resp.URN,
-				Inputs: inputs,
+				Inputs: resource.FromResourcePropertyMap(inputs),
 			})
 			if expectError {
 				return nil
@@ -3419,13 +3419,13 @@ func TestTargetUntargetedParentWithUpdatedDependency(t *testing.T) {
 			Dependencies: []resource.URN{
 				resp.URN,
 			},
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "child", true, deploytest.ResourceOptions{
 			Parent: respParent.URN,
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
@@ -3520,12 +3520,12 @@ func TestTargetChangeProviderVersion(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:index:typA", "target", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgB:index:typA", "unrelated", true, deploytest.ResourceOptions{
-			Inputs:  inputs,
+			Inputs:  resource.FromResourcePropertyMap(inputs),
 			Version: providerVersion,
 		})
 		if expectError {
@@ -3591,17 +3591,17 @@ func TestTargetChangeAndSameProviderVersion(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:index:typA", "target", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
 		_, _ = monitor.RegisterResource("pkgB:index:typA", "unrelated1", true, deploytest.ResourceOptions{
-			Inputs:  inputs,
+			Inputs:  resource.FromResourcePropertyMap(inputs),
 			Version: providerVersion,
 		})
 
 		_, _ = monitor.RegisterResource("pkgB:index:typA", "unrelated2", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 			// This one always uses 1.0.0
 			Version: "1.0.0",
 		})
@@ -4741,7 +4741,7 @@ func TestUntargetedProviderChange(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:index:typA", "target", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
@@ -4755,7 +4755,7 @@ func TestUntargetedProviderChange(t *testing.T) {
 		}
 
 		_, err = monitor.RegisterResource("pkgB:index:typA", "unrelated", true, deploytest.ResourceOptions{
-			Inputs:   inputs,
+			Inputs:   resource.FromResourcePropertyMap(inputs),
 			Provider: provider.String(),
 		})
 		if expectError {
@@ -5560,9 +5560,9 @@ func TestTargetedUpdateAppliesNewInputs_Issue24303(t *testing.T) {
 				_, rollbackErrs[i] = monitor.RegisterResource(
 					"pkgA:m:typA", fmt.Sprintf("rollback-%d", i), true,
 					deploytest.ResourceOptions{
-						Inputs: resource.PropertyMap{
+						Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 							"value": resource.NewProperty(rollbackValue.Load().(string)),
-						},
+						}),
 					})
 			}(i)
 		}
@@ -5670,11 +5670,11 @@ func TestTargetDependentsThroughReadResource(t *testing.T) {
 		require.NoError(t, err)
 
 		readB, _, err := monitor.ReadResource(
-			"pkgA:m:typA", "readB", "some-id", resA.URN, resource.PropertyMap{}, "", "", "", nil, "", "")
+			"pkgA:m:typA", "readB", "some-id", resA.URN, property.Map{}, "", "", "", nil, "", "")
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resC", true, deploytest.ResourceOptions{
-			Inputs:       resource.PropertyMap{"foo": resource.NewProperty(cValue)},
+			Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty(cValue)}),
 			Dependencies: []resource.URN{readB},
 		})
 		require.NoError(t, err)

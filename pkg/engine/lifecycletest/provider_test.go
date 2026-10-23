@@ -320,7 +320,7 @@ func TestSingleResourceExplicitProviderReplace(t *testing.T) {
 	}
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), "provA", true,
-			deploytest.ResourceOptions{Inputs: providerInputs})
+			deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(providerInputs)})
 		require.NoError(t, err)
 
 		provRef, err := providers.NewReference(resp.URN, resp.ID)
@@ -461,7 +461,7 @@ func TestSingleResourceExplicitProviderAliasUpdateDelete(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), providerName, true,
 			deploytest.ResourceOptions{
-				Inputs:    providerInputs,
+				Inputs:    resource.FromResourcePropertyMap(providerInputs),
 				AliasURNs: aliases,
 			})
 		require.NoError(t, err)
@@ -552,7 +552,7 @@ func TestSingleResourceExplicitProviderAliasReplace(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), providerName, true,
 			deploytest.ResourceOptions{
-				Inputs:    providerInputs,
+				Inputs:    resource.FromResourcePropertyMap(providerInputs),
 				AliasURNs: aliases,
 			})
 		require.NoError(t, err)
@@ -693,7 +693,7 @@ func TestSingleResourceExplicitProviderDeleteBeforeReplace(t *testing.T) {
 	}
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), "provA", true,
-			deploytest.ResourceOptions{Inputs: providerInputs})
+			deploytest.ResourceOptions{Inputs: resource.FromResourcePropertyMap(providerInputs)})
 		require.NoError(t, err)
 
 		provRef, err := providers.NewReference(resp.URN, resp.ID)
@@ -1220,9 +1220,9 @@ func TestProviderVersionInput(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), "provA", true,
 			deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"version": resource.NewProperty("1.0.0"),
-				},
+				}),
 			})
 		require.NoError(t, err)
 
@@ -1265,9 +1265,9 @@ func TestProviderVersionInputAndOption(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource(providers.MakeProviderType("pkgA"), "provA", true,
 			deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"version": resource.NewProperty("1.5.0"),
-				},
+				}),
 				Version: "1.0.0",
 			})
 		require.NoError(t, err)
@@ -2256,9 +2256,9 @@ func TestProviderSameStep(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pulumi:providers:pkg", "provA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"value": providerConfigValue,
-			},
+			}),
 		})
 		require.NoError(t, err)
 
@@ -2365,9 +2365,9 @@ func TestMissingIDRefresh(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, resp.ID)

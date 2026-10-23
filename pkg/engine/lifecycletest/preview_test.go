@@ -120,15 +120,15 @@ func TestPreviewRefreshWithProgram(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: resource.FromResourcePropertyMap(resource.ToResourcePropertyMap(programInputs)),
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time the update outputs
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resource.ToResourcePropertyMap(resp.Outputs)))
 		} else {
-			assert.Equal(t, updateOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, updateOutputs, resource.FromResourcePropertyMap(resource.ToResourcePropertyMap(resp.Outputs)))
 		}
 
 		return nil
@@ -206,7 +206,7 @@ func TestPreviewStackOutputs(t *testing.T) {
 			}
 		}
 
-		err = monitor.RegisterResourceOutputs(resp.URN, outputs)
+		err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(outputs))
 		require.NoError(t, err)
 
 		return nil

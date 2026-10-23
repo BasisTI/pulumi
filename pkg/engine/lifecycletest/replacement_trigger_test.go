@@ -55,8 +55,8 @@ func TestReplacementTrigger(t *testing.T) {
 	value := resource.NewPropertyValue("first")
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 
 		require.NoError(t, err)
@@ -134,8 +134,8 @@ func TestReplacementTriggerWithSecret(t *testing.T) {
 	value := resource.NewPropertyValue("first")
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 
 		require.NoError(t, err)
@@ -193,8 +193,8 @@ func TestReplacementTriggerWithDeepSecret(t *testing.T) {
 	value := resource.NewPropertyValue([]resource.PropertyValue{resource.NewPropertyValue("first")})
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 
 		require.NoError(t, err)
@@ -259,8 +259,8 @@ func TestReplacementTriggerWithOutput(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 		if err != nil {
 			return err
@@ -359,8 +359,8 @@ func TestReplacementTriggerWithComputed(t *testing.T) {
 	value := resource.MakeComputed(resource.NewPropertyValue("first"))
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 		if err != nil {
 			return err
@@ -444,8 +444,8 @@ func TestReplacementTriggerOutputWrappedPlainValue(t *testing.T) {
 	value := resource.NewPropertyValue("first")
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:             resource.NewPropertyMapFromMap(map[string]any{"foo": "bar"}),
-			ReplacementTrigger: value,
+			Inputs:             property.NewMap(map[string]property.Value{"foo": property.New("bar")}),
+			ReplacementTrigger: resource.FromResourcePropertyValue(value),
 		})
 		require.NoError(t, err)
 		return nil

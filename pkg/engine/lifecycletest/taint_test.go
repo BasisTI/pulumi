@@ -63,9 +63,9 @@ func TestTaintReplacement(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		// Register the resource
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		return err
 	})
@@ -145,9 +145,9 @@ func TestTaintMultipleResources(t *testing.T) {
 		// Register three resources
 		for _, name := range []string{"resA", "resB", "resC"} {
 			_, err := monitor.RegisterResource("pkgA:m:typA", name, true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"name": resource.NewProperty(name),
-				},
+				}),
 			})
 			if err != nil {
 				return err
@@ -223,9 +223,9 @@ func TestTaintWithPendingDelete(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		// Register the current resource
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		return err
 	})
@@ -331,9 +331,9 @@ func TestTaintNoChanges(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		// Register the same resource with same properties
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 		})
 		return err
 	})

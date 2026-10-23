@@ -39,6 +39,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/common/diag"
 	sdkproviders "github.com/pulumi/pulumi/sdk/v3/go/common/providers"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
 	pulumirpc "github.com/pulumi/pulumi/sdk/v3/proto/go"
@@ -189,7 +190,7 @@ func newStateMigrationEnv(t *testing.T) *stateMigrationEnv {
 		if env.registerChild {
 			_, err = monitor.RegisterResource("pkgA:m:typA", env.childName, true, deploytest.ResourceOptions{
 				Parent:         resp.URN,
-				Inputs:         env.childInputs,
+				Inputs:         resource.FromResourcePropertyMap(env.childInputs),
 				Protect:        &env.childProtect,
 				RetainOnDelete: &env.childRetainOnDelete,
 			})
@@ -529,9 +530,9 @@ func TestStateMigrationNormalizesProgramReferences(t *testing.T) {
 
 		componentOptions := deploytest.ResourceOptions{}
 		if upgrade {
-			componentOptions.Inputs = resource.PropertyMap{
+			componentOptions.Inputs = resource.FromResourcePropertyMap(resource.PropertyMap{
 				"ref": resource.MakeCustomResourceReference(childAURN, predecessorID, ""),
-			}
+			})
 			componentOptions.StateMigrations = []*pulumirpc.Callback{
 				renameMigration(t, callbacks, "childA", "childB"),
 			}
@@ -547,7 +548,7 @@ func TestStateMigrationNormalizesProgramReferences(t *testing.T) {
 		}
 		child, err := monitor.RegisterResource("pkgA:m:typA", childName, true, deploytest.ResourceOptions{
 			Parent: component.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		if err != nil {
 			return err
@@ -560,7 +561,7 @@ func TestStateMigrationNormalizesProgramReferences(t *testing.T) {
 		}
 		ref := resource.MakeCustomResourceReference(referenceURN, referenceID, "")
 		_, err = monitor.RegisterResource("pkgA:m:consumer", "consumer", true, deploytest.ResourceOptions{
-			Inputs:       resource.PropertyMap{"ref": ref},
+			Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"ref": ref}),
 			Dependencies: []resource.URN{referenceURN},
 			PropertyDeps: map[resource.PropertyKey][]resource.URN{"ref": {referenceURN}},
 		})
@@ -568,7 +569,7 @@ func TestStateMigrationNormalizesProgramReferences(t *testing.T) {
 			return err
 		}
 
-		return monitor.RegisterResourceOutputs(holder.URN, resource.PropertyMap{"ref": ref})
+		return monitor.RegisterResourceOutputs(holder.URN, resource.FromResourcePropertyMap(resource.PropertyMap{"ref": ref}))
 	})
 	hostF := deploytest.NewPluginHostF(nil, nil, programF, nil, nil, loaders...)
 	plan := &lt.TestPlan{Options: stateMigrationTestOptions(t, hostF)}
@@ -753,10 +754,10 @@ func TestStateMigrationChainedReferences(t *testing.T) {
 					Parent:       root.URN,
 					Dependencies: []resource.URN{root.URN},
 					PropertyDeps: map[resource.PropertyKey][]resource.URN{"ref": {root.URN}},
-					Inputs: resource.PropertyMap{
+					Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 						"ref":   resource.MakeComponentResourceReference(root.URN, ""),
 						"plain": resource.NewProperty(string(rootURN("old"))),
-					},
+					}),
 				})
 				return err
 			})
@@ -951,20 +952,21 @@ func TestStateMigrationSplit(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		inputs := map[string]any{"name": "resource"}
+		inputs := property.NewMap(map[string]property.Value{"name": property.New("resource")})
 		if !upgrade {
-			inputs["settings"] = settings
+			inputs = inputs.Set("settings", property.New(property.NewMap(map[string]property.Value{"enabled": property.New(true)})))
 		}
 		_, err = monitor.RegisterResource(resourceType, "resource", true, deploytest.ResourceOptions{
-			Parent: component.URN, Inputs: resource.NewPropertyMapFromMap(inputs),
+			Parent: component.URN, Inputs: inputs,
 		})
 		if err != nil || !upgrade {
 			return err
 		}
 		_, err = monitor.RegisterResource(settingsType, "settings", true, deploytest.ResourceOptions{
 			Parent: component.URN,
-			Inputs: resource.NewPropertyMapFromMap(map[string]any{
-				"resourceId": "resource-id", "settings": settings,
+			Inputs: property.NewMap(map[string]property.Value{
+				"resourceId": property.New("resource-id"),
+				"settings":   property.New(property.NewMap(map[string]property.Value{"enabled": property.New(true)})),
 			}),
 			Dependencies: []resource.URN{resourceURN},
 			PropertyDeps: map[resource.PropertyKey][]resource.URN{"resourceId": {resourceURN}},
@@ -1108,7 +1110,7 @@ func TestStateMigrationFold(t *testing.T) {
 		if migrate {
 			child, err := monitor.RegisterResource("pkgA:m:typA", "childC", true, deploytest.ResourceOptions{
 				Parent: comp.URN,
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 			})
 			if err != nil {
 				return err
@@ -1118,14 +1120,14 @@ func TestStateMigrationFold(t *testing.T) {
 		} else {
 			childA, err := monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 				Parent: comp.URN,
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 			})
 			if err != nil {
 				return err
 			}
 			childB, err := monitor.RegisterResource("pkgA:m:typA", "childB", false, deploytest.ResourceOptions{
 				Parent: comp.URN,
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 			})
 			if err != nil {
 				return err
@@ -1135,9 +1137,9 @@ func TestStateMigrationFold(t *testing.T) {
 		}
 
 		_, err = monitor.RegisterResource("pkgA:m:consumer", "consumer", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"ref": resource.MakeCustomResourceReference(canonicalURN, canonicalID, ""),
-			},
+			}),
 			Dependencies: dependencies,
 			PropertyDeps: map[resource.PropertyKey][]resource.URN{
 				"ref": dependencies,
@@ -1293,7 +1295,7 @@ func TestStateMigrationS3BucketFold(t *testing.T) {
 		if !upgrade {
 			_, err = monitor.RegisterResource(oldBucketType, "bucket", true, deploytest.ResourceOptions{
 				Parent: component.URN,
-				Inputs: oldBucketInputs,
+				Inputs: resource.FromResourcePropertyMap(oldBucketInputs),
 			})
 			if err != nil {
 				return err
@@ -1301,14 +1303,14 @@ func TestStateMigrationS3BucketFold(t *testing.T) {
 			_, err = monitor.RegisterResource(
 				oldVersioningType, "bucket-versioning", true, deploytest.ResourceOptions{
 					Parent: component.URN,
-					Inputs: versioningInputs,
+					Inputs: resource.FromResourcePropertyMap(versioningInputs),
 				})
 			return err
 		}
 
 		_, err = monitor.RegisterResource(newBucketType, "bucket", true, deploytest.ResourceOptions{
 			Parent: component.URN,
-			Inputs: newBucketInputs,
+			Inputs: resource.FromResourcePropertyMap(newBucketInputs),
 		})
 		return err
 	})
@@ -1372,7 +1374,7 @@ func TestStateMigrationConstruct(t *testing.T) {
 					}
 					_, err = monitor.RegisterResource("pkgA:m:typA", childName, true, deploytest.ResourceOptions{
 						Parent: resp.URN,
-						Inputs: resource.PropertyMap{"foo": resource.NewProperty(1.0)},
+						Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty(1.0)}),
 					})
 					require.NoError(t, err)
 
@@ -1651,7 +1653,7 @@ func TestStateMigrationAliasedRootRename(t *testing.T) {
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 			Parent: resp.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		return err
 	})
@@ -1803,7 +1805,7 @@ func TestStateMigrationRewritesLaterAlias(t *testing.T) {
 			// This call happens after the component registration above has run the migration. Omitting Parent makes
 			// childB top-level; the alias identifies it as the original nested childA.
 			_, err = monitor.RegisterResource("pkgA:m:typA", "childB", true, deploytest.ResourceOptions{
-				Inputs:    resource.PropertyMap{"foo": resource.NewProperty("bar")},
+				Inputs:    resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 				AliasURNs: []resource.URN{childAURN},
 			})
 			return err
@@ -1815,7 +1817,7 @@ func TestStateMigrationRewritesLaterAlias(t *testing.T) {
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 			Parent: component.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		return err
 	})
@@ -1887,7 +1889,7 @@ func TestStateMigrationRejectsPredecessorURNReuse(t *testing.T) {
 					// The first update creates the predecessor state at component$childA.
 					_, err = monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 						Parent: component.URN,
-						Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+						Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 					})
 					return err
 				}
@@ -1898,13 +1900,13 @@ func TestStateMigrationRejectsPredecessorURNReuse(t *testing.T) {
 					// ReadResource asks the provider to read the existing physical resource "read-id". The childA
 					// name and component parent would assign the returned state the consumed childAURN.
 					_, _, err = monitor.ReadResource(
-						"pkgA:m:typA", "childA", "read-id", component.URN, nil, "", "", "", nil, "", "")
+						"pkgA:m:typA", "childA", "read-id", component.URN, property.Map{}, "", "", "", nil, "", "")
 					return err
 				}
 				// RegisterResource likewise attempts to assign a new managed resource the consumed childAURN.
 				_, err = monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 					Parent: component.URN,
-					Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+					Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 				})
 				return err
 			})
@@ -1944,7 +1946,7 @@ func TestStateMigrationRejectsClaimedState(t *testing.T) {
 		if upgrade {
 			// This registration runs claims the nested childA state through its alias.
 			_, err := monitor.RegisterResource("pkgA:m:typA", "childB", true, deploytest.ResourceOptions{
-				Inputs:    resource.PropertyMap{"foo": resource.NewProperty("bar")},
+				Inputs:    resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 				AliasURNs: []resource.URN{childAURN},
 			})
 			require.NoError(t, err)
@@ -1961,7 +1963,7 @@ func TestStateMigrationRejectsClaimedState(t *testing.T) {
 		require.NoError(t, err)
 		_, err = monitor.RegisterResource("pkgA:m:typA", "childA", true, deploytest.ResourceOptions{
 			Parent: resp.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		return err
 	})
@@ -2290,7 +2292,7 @@ func newNestedEnv(t *testing.T) *nestedEnv {
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typA", env.leafName, true, deploytest.ResourceOptions{
 			Parent: nested.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		return err
 	})
@@ -2472,7 +2474,7 @@ func TestStateMigrationAcrossTypes(t *testing.T) {
 		}
 		_, err = monitor.RegisterResource("pkgA:m:typB", "childB", true, deploytest.ResourceOptions{
 			Parent: resp.URN,
-			Inputs: resource.PropertyMap{"foo": resource.NewProperty("bar")},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("bar")}),
 		})
 		return err
 	})

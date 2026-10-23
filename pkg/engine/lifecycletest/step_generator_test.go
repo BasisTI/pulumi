@@ -53,7 +53,7 @@ func TestDuplicateURN(t *testing.T) {
 		assert.Error(t, err)
 
 		// Reads use the same URN namespace as register so make sure this also errors
-		_, _, err = monitor.ReadResource("pkgA:m:typA", "resA", "id", "", resource.PropertyMap{}, "", "", "", nil, "", "")
+		_, _, err = monitor.ReadResource("pkgA:m:typA", "resA", "id", "", property.Map{}, "", "", "", nil, "", "")
 		assert.Error(t, err)
 
 		return nil
@@ -138,9 +138,9 @@ func TestSecretMasked(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"shouldBeSecret": resource.MakeSecret(resource.NewProperty("bar")),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
@@ -203,7 +203,7 @@ func TestReadReplaceStep(t *testing.T) {
 					},
 				}).
 				RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-					_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", "read-id", "", nil, "", "", "", nil, "", "")
+					_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", "read-id", "", property.Map{}, "", "", "", nil, "", "")
 					require.NoError(t, err)
 					return nil
 				}, false).
@@ -256,7 +256,7 @@ func TestRelinquishStep(t *testing.T) {
 					},
 				}).
 				RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-					_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", resourceID, "", nil, "", "", "", nil, "", "")
+					_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", resourceID, "", property.Map{}, "", "", "", nil, "", "")
 					require.NoError(t, err)
 					return nil
 				}, true).
@@ -285,7 +285,7 @@ func TestTakeOwnershipStep(t *testing.T) {
 			},
 		}).
 		RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-			_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", "my-resource-id", "", nil, "", "", "", nil, "", "")
+			_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", "my-resource-id", "", property.Map{}, "", "", "", nil, "", "")
 			require.NoError(t, err)
 			return nil
 		}, false).
@@ -445,7 +445,7 @@ func TestReadNilOutputs(t *testing.T) {
 			},
 		}).
 		RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-			_, _, _ = monitor.ReadResource("pkgA:m:typA", "resA", resourceID, "", nil, "", "", "", nil, "", "")
+			_, _, _ = monitor.ReadResource("pkgA:m:typA", "resA", resourceID, "", property.Map{}, "", "", "", nil, "", "")
 			return nil
 		}, true).
 		Then(func(snap *deploy.Snapshot, err error) {
@@ -485,7 +485,7 @@ func TestExternalEventMetadata(t *testing.T) {
 		require.NoError(t, err)
 
 		// Register an external (read) resource.
-		_, _, err = monitor.ReadResource("pkgA:m:typA", "externalRes", "read-id", "", nil, "", "", "", nil, "", "")
+		_, _, err = monitor.ReadResource("pkgA:m:typA", "externalRes", "read-id", "", property.Map{}, "", "", "", nil, "", "")
 		require.NoError(t, err)
 
 		return nil
@@ -550,7 +550,7 @@ func TestExistsResourceTrue(t *testing.T) {
 			},
 		}).
 		RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-			exists, err := monitor.ExistsResource("pkgA:m:typA", "existing-id", "", nil, "", "", "")
+			exists, err := monitor.ExistsResource("pkgA:m:typA", "existing-id", "", property.Map{}, "", "", "")
 			if err != nil {
 				return fmt.Errorf("ExistsResource failed: %w", err)
 			}
@@ -583,7 +583,7 @@ func TestExistsResourceFalse(t *testing.T) {
 			},
 		}).
 		RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-			exists, err := monitor.ExistsResource("pkgA:m:typA", "nonexistent-id", "", nil, "", "", "")
+			exists, err := monitor.ExistsResource("pkgA:m:typA", "nonexistent-id", "", property.Map{}, "", "", "")
 			if err != nil {
 				return fmt.Errorf("ExistsResource failed: %w", err)
 			}
@@ -610,7 +610,7 @@ func TestExistsResourceProviderError(t *testing.T) {
 			},
 		}).
 		RunUpdate(func(info plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
-			_, err := monitor.ExistsResource("pkgA:m:typA", "error-id", "", nil, "", "", "")
+			_, err := monitor.ExistsResource("pkgA:m:typA", "error-id", "", property.Map{}, "", "", "")
 			if err == nil {
 				return errors.New("expected ExistsResource to return an error")
 			}
@@ -650,7 +650,7 @@ func TestExistsResourceWithProperties(t *testing.T) {
 			props := resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
 			}
-			exists, err := monitor.ExistsResource("pkgA:m:typA", "prop-id", "", props, "", "", "")
+			exists, err := monitor.ExistsResource("pkgA:m:typA", "prop-id", "", resource.FromResourcePropertyMap(props), "", "", "")
 			if err != nil {
 				return fmt.Errorf("ExistsResource failed: %w", err)
 			}

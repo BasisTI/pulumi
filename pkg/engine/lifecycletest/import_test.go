@@ -111,16 +111,16 @@ func TestImportOption(t *testing.T) {
 	expectedID := resource.ID("imported-id")
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		if readID != "" {
-			_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", readID, "", inputs, "", "", "", nil, "", "")
+			_, _, err := monitor.ReadResource("pkgA:m:typA", "resA", readID, "", resource.FromResourcePropertyMap(inputs), "", "", "", nil, "", "")
 			require.NoError(t, err)
 		} else {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs:   inputs,
+				Inputs:   resource.FromResourcePropertyMap(inputs),
 				ImportID: importID,
 			})
 			if err == nil {
 				assert.Equal(t, expectedID, resp.ID)
-				assert.Equal(t, expectedOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+				assert.Equal(t, expectedOutputs, resource.FromResourcePropertyMap(resource.ToResourcePropertyMap(resp.Outputs)))
 			} else {
 				return nil
 			}
@@ -424,9 +424,9 @@ func TestImportWithDifferingImportIdentifierFormat(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("bar"),
-			},
+			}),
 			// The import ID is deliberately not the same as the ID returned from Read.
 			ImportID: resource.ID("import-id"),
 		})
@@ -768,7 +768,7 @@ func TestImportThenSecretValueDoesNotReplace(t *testing.T) {
 			}
 			programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 				_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-					Inputs:           inputs,
+					Inputs:           resource.FromResourcePropertyMap(inputs),
 					ReplaceOnChanges: []string{"foo", "fromOutput"},
 				})
 				require.NoError(t, err)
@@ -947,10 +947,10 @@ func TestImportIgnoreChanges(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo":  resource.NewProperty("foo"),
 				"frob": resource.NewProperty(1.0),
-			},
+			}),
 			ImportID:      "import-id",
 			IgnoreChanges: []string{"foo"},
 		})
@@ -1012,16 +1012,16 @@ func TestImportPlanExistingImport(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo":  resource.NewProperty("bar"),
 				"frob": resource.NewProperty(1.0),
-			},
+			}),
 			ImportID: "imported-id",
 			Parent:   resp.URN,
 		})
 		require.NoError(t, err)
 
-		err = monitor.RegisterResourceOutputs(resp.URN, resource.PropertyMap{})
+		err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(resource.PropertyMap{}))
 		require.NoError(t, err)
 		return nil
 	})
@@ -1731,7 +1731,7 @@ func TestImportInputDiff(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: upInputs,
+			Inputs: resource.FromResourcePropertyMap(upInputs),
 		})
 		require.NoError(t, err)
 		return nil
@@ -1946,7 +1946,7 @@ func TestImportWithFailedUpdate(t *testing.T) {
 	}
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, _ = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:   inputs,
+			Inputs:   resource.FromResourcePropertyMap(inputs),
 			ImportID: importID,
 		})
 		return nil
@@ -2063,9 +2063,9 @@ func TestImportDeleteBeforeReplace(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
 			ImportID: "import-id",
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("baz"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 		return nil
@@ -2138,9 +2138,9 @@ func TestImportIDPreservedAcrossUpdate(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
 			ImportID: importIdentifier,
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"foo": resource.NewProperty("desired"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 		return nil

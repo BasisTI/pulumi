@@ -58,7 +58,7 @@ func TestSingleComponentDefaultProviderLifecycle(t *testing.T) {
 				require.NoError(t, err)
 
 				outs := resource.PropertyMap{"foo": resource.NewProperty("bar")}
-				err = monitor.RegisterResourceOutputs(resp.URN, outs)
+				err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(outs))
 				require.NoError(t, err)
 
 				return plugin.ConstructResponse{
@@ -188,10 +188,10 @@ func TestComponentDeleteDependencies(t *testing.T) {
 						require.NoError(t, err)
 						sgURN = resp.URN
 
-						err = monitor.RegisterResourceOutputs(nestedURN, resource.PropertyMap{})
+						err = monitor.RegisterResourceOutputs(nestedURN, resource.FromResourcePropertyMap(resource.PropertyMap{}))
 						require.NoError(t, err)
 
-						err = monitor.RegisterResourceOutputs(firstURN, resource.PropertyMap{})
+						err = monitor.RegisterResourceOutputs(firstURN, resource.FromResourcePropertyMap(resource.PropertyMap{}))
 						require.NoError(t, err)
 
 						return plugin.ConstructResponse{URN: firstURN}, nil
@@ -211,7 +211,7 @@ func TestComponentDeleteDependencies(t *testing.T) {
 						require.NoError(t, err)
 						ruleURN = resp.URN
 
-						err = monitor.RegisterResourceOutputs(secondURN, resource.PropertyMap{})
+						err = monitor.RegisterResourceOutputs(secondURN, resource.FromResourcePropertyMap(resource.PropertyMap{}))
 						require.NoError(t, err)
 
 						return plugin.ConstructResponse{URN: secondURN}, nil
@@ -361,11 +361,11 @@ func TestConstructCallSecretsUnknowns(t *testing.T) {
 
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", false, deploytest.ResourceOptions{
 			Remote: true,
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
-		_, _, _, err = monitor.Call("pkgA:m:typA", inputs, nil, "", "", "", "", nil, "")
+		_, _, _, err = monitor.Call("pkgA:m:typA", resource.FromResourcePropertyMap(inputs), nil, "", "", "", "", nil, "")
 		require.NoError(t, err)
 
 		return nil
@@ -482,15 +482,15 @@ func TestConstructCallReturnDependencies(t *testing.T) {
 				"bar": {urn},
 			}, resp.Dependencies)
 
-			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.PropertyMap{
+			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.FromResourcePropertyMap(resource.PropertyMap{
 				// Send this as an output value using the dependencies returned.
 				"arg": resource.NewProperty(resource.Output{
-					Element:      resp.Outputs["foo"].SecretValue().Element,
+					Element:      resource.ToResourcePropertyMap(resp.Outputs)["foo"].SecretValue().Element,
 					Known:        true,
 					Secret:       true,
 					Dependencies: []resource.URN{urn},
 				}),
-			}, nil, "", "", "", "", nil, "")
+			}), nil, "", "", "", "", nil, "")
 			require.NoError(t, err)
 
 			// Assert that the outputs are received as just plain values because SDKs don't yet support output
@@ -622,15 +622,15 @@ func TestConstructCallReturnOutputs(t *testing.T) {
 				"bar": {urn},
 			}, resp.Dependencies)
 
-			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.PropertyMap{
+			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.FromResourcePropertyMap(resource.PropertyMap{
 				// Send this as an output value using the dependencies returned.
 				"arg": resource.NewProperty(resource.Output{
-					Element:      resp.Outputs["foo"].SecretValue().Element,
+					Element:      resource.ToResourcePropertyMap(resp.Outputs)["foo"].SecretValue().Element,
 					Known:        true,
 					Secret:       true,
 					Dependencies: []resource.URN{urn},
 				}),
-			}, nil, "", "", "", "", nil, "")
+			}), nil, "", "", "", "", nil, "")
 			require.NoError(t, err)
 
 			// Assert that the outputs are received as just plain values because SDKs don't yet support output
@@ -754,21 +754,21 @@ func TestConstructCallSendDependencies(t *testing.T) {
 
 		programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 			respC, err := monitor.RegisterResource("pkgA:m:typC", "resC", false, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"arg": resource.NewProperty(1.0),
-				},
+				}),
 			})
 			require.NoError(t, err)
 
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", false, deploytest.ResourceOptions{
 				Remote: true,
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"arg": resource.NewProperty(resource.Output{
-						Element:      respC.Outputs["arg"],
+						Element:      resource.ToResourcePropertyMap(respC.Outputs)["arg"],
 						Known:        true,
 						Dependencies: []resource.URN{respC.URN},
 					}),
-				},
+				}),
 			})
 			require.NoError(t, err)
 
@@ -786,15 +786,15 @@ func TestConstructCallSendDependencies(t *testing.T) {
 				"bar": {urn},
 			}, resp.Dependencies)
 
-			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.PropertyMap{
+			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.FromResourcePropertyMap(resource.PropertyMap{
 				// Send this as an output value using the dependencies returned.
 				"arg": resource.NewProperty(resource.Output{
-					Element:      resp.Outputs["foo"].SecretValue().Element,
+					Element:      resource.ToResourcePropertyMap(resp.Outputs)["foo"].SecretValue().Element,
 					Known:        true,
 					Secret:       true,
 					Dependencies: []resource.URN{urn},
 				}),
-			}, nil, "", "", "", "", nil, "")
+			}), nil, "", "", "", "", nil, "")
 			require.NoError(t, err)
 
 			// Assert that the outputs are received as just plain values because SDKs don't yet support output
@@ -919,21 +919,21 @@ func TestConstructCallDependencyDedeuplication(t *testing.T) {
 
 		programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 			respC, err := monitor.RegisterResource("pkgA:m:typC", "resC", false, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"arg": resource.NewProperty(1.0),
-				},
+				}),
 			})
 			require.NoError(t, err)
 
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", false, deploytest.ResourceOptions{
 				Remote: true,
-				Inputs: resource.PropertyMap{
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 					"arg": resource.NewProperty(resource.Output{
-						Element:      respC.Outputs["arg"],
+						Element:      resource.ToResourcePropertyMap(respC.Outputs)["arg"],
 						Known:        true,
 						Dependencies: []resource.URN{respC.URN},
 					}),
-				},
+				}),
 				PropertyDeps: map[resource.PropertyKey][]resource.URN{
 					"arg": {respC.URN},
 				},
@@ -954,15 +954,15 @@ func TestConstructCallDependencyDedeuplication(t *testing.T) {
 				"bar": {urn},
 			}, resp.Dependencies)
 
-			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.PropertyMap{
+			result, deps, _, err := monitor.Call("pkgA:m:typA", resource.FromResourcePropertyMap(resource.PropertyMap{
 				// Send this as an output value using the dependencies returned.
 				"arg": resource.NewProperty(resource.Output{
-					Element:      resp.Outputs["foo"].SecretValue().Element,
+					Element:      resource.ToResourcePropertyMap(resp.Outputs)["foo"].SecretValue().Element,
 					Known:        true,
 					Secret:       true,
 					Dependencies: []resource.URN{urn},
 				}),
-			}, map[resource.PropertyKey][]resource.URN{
+			}), map[resource.PropertyKey][]resource.URN{
 				"arg": {urn},
 			}, "", "", "", "", nil, "")
 			require.NoError(t, err)
@@ -1028,7 +1028,7 @@ func TestSingleComponentMethodResourceDefaultProviderLifecycle(t *testing.T) {
 				require.NoError(t, err)
 
 				outs := resource.PropertyMap{"foo": resource.NewProperty("bar")}
-				err = monitor.RegisterResourceOutputs(resp.URN, outs)
+				err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(outs))
 				require.NoError(t, err)
 
 				return plugin.ConstructResponse{
@@ -1066,7 +1066,7 @@ func TestSingleComponentMethodResourceDefaultProviderLifecycle(t *testing.T) {
 			"foo": resource.NewProperty("bar"),
 		}, resp.Outputs)
 
-		_, _, _, err = monitor.Call("pkgA:m:typA/methodA", resource.PropertyMap{}, nil, "", "", "", "", nil, "")
+		_, _, _, err = monitor.Call("pkgA:m:typA/methodA", resource.FromResourcePropertyMap(resource.PropertyMap{}), nil, "", "", "", "", nil, "")
 		require.NoError(t, err)
 		return nil
 	})
@@ -1109,7 +1109,7 @@ func TestSingleComponentMethodDefaultProviderLifecycle(t *testing.T) {
 				require.NoError(t, err)
 
 				outs := resource.PropertyMap{"foo": resource.NewProperty("bar")}
-				err = monitor.RegisterResourceOutputs(urn, outs)
+				err = monitor.RegisterResourceOutputs(urn, resource.FromResourcePropertyMap(outs))
 				require.NoError(t, err)
 
 				return plugin.ConstructResponse{
@@ -1128,11 +1128,11 @@ func TestSingleComponentMethodDefaultProviderLifecycle(t *testing.T) {
 				}), req.Args)
 				name := req.Args.Get("name").AsString()
 
-				result, _, err := monitor.Invoke("pulumi:pulumi:getResource", resource.PropertyMap{
+				result, _, err := monitor.Invoke("pulumi:pulumi:getResource", resource.FromResourcePropertyMap(resource.PropertyMap{
 					"urn": resource.NewProperty(string(urn)),
-				}, "", "", "")
+				}), "", "", "")
 				require.NoError(t, err)
-				state := result["state"]
+				state := resource.ToResourcePropertyMap(result)["state"]
 				foo := state.ObjectValue()["foo"].StringValue()
 
 				message := fmt.Sprintf("%s, %s!", name, foo)
@@ -1159,9 +1159,9 @@ func TestSingleComponentMethodDefaultProviderLifecycle(t *testing.T) {
 			"foo": resource.NewProperty("bar"),
 		}, resp.Outputs)
 
-		outs, _, _, err := monitor.Call("pkgA:m:typA/methodA", resource.PropertyMap{
+		outs, _, _, err := monitor.Call("pkgA:m:typA/methodA", resource.FromResourcePropertyMap(resource.PropertyMap{
 			"name": resource.NewProperty("Alice"),
-		}, nil, "", "", "", "", nil, "")
+		}), nil, "", "", "", "", nil, "")
 		require.NoError(t, err)
 		assert.Equal(t, resource.PropertyMap{
 			"message": resource.NewProperty("Alice, bar!"),
@@ -1220,9 +1220,9 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByProgram(t *testing.T) {
 
 						custom, err := rm.RegisterResource("pkgA:index:Custom", "custom", true, deploytest.ResourceOptions{
 							Parent: component.URN,
-							Inputs: resource.PropertyMap{
+							Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 								"foo": resource.NewProperty("bar"),
-							},
+							}),
 						})
 						require.NoError(t, err)
 
@@ -1246,25 +1246,26 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByProgram(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		customResRef := component.Outputs["custom"].ResourceReferenceValue()
+		customResRef := resource.ToResourcePropertyMap(component.Outputs)["custom"].ResourceReferenceValue()
 
 		state, _, err := monitor.Invoke(
 			"pulumi:pulumi:getResource",
-			resource.PropertyMap{
+			resource.FromResourcePropertyMap(resource.PropertyMap{
 				"urn": resource.NewProperty(string(customResRef.URN)),
-			},
+			}),
 			"", /*provider*/
 			"", /*version*/
 			"", /*packageRef*/
 		)
 		require.NoError(t, err)
 
-		stateProvider := state["provider"].StringValue()
+		stateMap := resource.ToResourcePropertyMap(state)
+			stateProvider := stateMap["provider"].StringValue()
 		stateProviderRef, err := providers.ParseReference(stateProvider)
 		require.NoError(t, err)
 		require.Equal(t, stateProviderRef.URN().Name(), "default")
 		require.Equal(t, stateProviderRef.URN().Type().String(), "pulumi:providers:pkgA")
-		delete(state, "provider")
+		delete(stateMap, "provider")
 
 		require.Equal(
 			t,
@@ -1275,7 +1276,7 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByProgram(t *testing.T) {
 					"foo": resource.NewProperty("bar"),
 				}),
 			},
-			state,
+			stateMap,
 		)
 
 		return nil
@@ -1333,9 +1334,9 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByComponent(t *testing.T)
 
 						custom, err := rm.RegisterResource("pkgA:index:Custom", "custom", true, deploytest.ResourceOptions{
 							Parent: component.URN,
-							Inputs: resource.PropertyMap{
+							Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 								"foo": resource.NewProperty("bar"),
-							},
+							}),
 						})
 						require.NoError(t, err)
 
@@ -1357,21 +1358,22 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByComponent(t *testing.T)
 
 						state, _, err := rm.Invoke(
 							"pulumi:pulumi:getResource",
-							resource.PropertyMap{
+							resource.FromResourcePropertyMap(resource.PropertyMap{
 								"urn": resource.NewProperty(string(customResRef.URN)),
-							},
+							}),
 							"", /*provider*/
 							"", /*version*/
 							"", /*packageRef*/
 						)
 						require.NoError(t, err)
 
-						stateProvider := state["provider"].StringValue()
+						stateMap := resource.ToResourcePropertyMap(state)
+			stateProvider := stateMap["provider"].StringValue()
 						stateProviderRef, err := providers.ParseReference(stateProvider)
 						require.NoError(t, err)
 						require.Equal(t, stateProviderRef.URN().Name(), "default")
 						require.Equal(t, stateProviderRef.URN().Type().String(), "pulumi:providers:pkgA")
-						delete(state, "provider")
+						delete(stateMap, "provider")
 
 						require.Equal(
 							t,
@@ -1382,7 +1384,7 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByComponent(t *testing.T)
 									"foo": resource.NewProperty("bar"),
 								}),
 							},
-							state,
+							stateMap,
 						)
 
 						return plugin.ConstructResponse{
@@ -1405,9 +1407,9 @@ func TestComponentRegisteredResourceOutputCanBeHydratedByComponent(t *testing.T)
 
 		_, err = monitor.RegisterResource("pkgA:index:Component2", "component2", false, deploytest.ResourceOptions{
 			Remote: true,
-			Inputs: resource.PropertyMap{
-				"custom": component1.Outputs["custom"],
-			},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
+				"custom": resource.ToResourcePropertyMap(component1.Outputs)["custom"],
+			}),
 		})
 		require.NoError(t, err)
 
@@ -1471,9 +1473,9 @@ func TestComponentReadResourceOutputCanBeHydratedByProgram(t *testing.T) {
 							"custom",
 							customID,
 							component.URN, /*parent*/
-							resource.PropertyMap{
+							resource.FromResourcePropertyMap(resource.PropertyMap{
 								"foo": resource.NewProperty("bar"),
-							},
+							}),
 							"",  /*provider*/
 							"",  /*version*/
 							"",  /*sourcePosition*/
@@ -1503,25 +1505,26 @@ func TestComponentReadResourceOutputCanBeHydratedByProgram(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		customResRef := component.Outputs["custom"].ResourceReferenceValue()
+		customResRef := resource.ToResourcePropertyMap(component.Outputs)["custom"].ResourceReferenceValue()
 
 		state, _, err := monitor.Invoke(
 			"pulumi:pulumi:getResource",
-			resource.PropertyMap{
+			resource.FromResourcePropertyMap(resource.PropertyMap{
 				"urn": resource.NewProperty(string(customResRef.URN)),
-			},
+			}),
 			"", /*provider*/
 			"", /*version*/
 			"", /*packageRef*/
 		)
 		require.NoError(t, err)
 
-		stateProvider := state["provider"].StringValue()
+		stateMap := resource.ToResourcePropertyMap(state)
+			stateProvider := stateMap["provider"].StringValue()
 		stateProviderRef, err := providers.ParseReference(stateProvider)
 		require.NoError(t, err)
 		require.Equal(t, stateProviderRef.URN().Name(), "default")
 		require.Equal(t, stateProviderRef.URN().Type().String(), "pulumi:providers:pkgA")
-		delete(state, "provider")
+		delete(stateMap, "provider")
 
 		require.Equal(
 			t,
@@ -1532,7 +1535,7 @@ func TestComponentReadResourceOutputCanBeHydratedByProgram(t *testing.T) {
 					"foo": resource.NewProperty("bar"),
 				}),
 			},
-			state,
+			stateMap,
 		)
 
 		return nil
@@ -1596,9 +1599,9 @@ func TestComponentReadResourceOutputCanBeHydratedByComponent(t *testing.T) {
 							"custom",
 							customID,
 							component.URN, /*parent*/
-							resource.PropertyMap{
+							resource.FromResourcePropertyMap(resource.PropertyMap{
 								"foo": resource.NewProperty("bar"),
-							},
+							}),
 							"",  /*provider*/
 							"",  /*version*/
 							"",  /*sourcePosition*/
@@ -1626,21 +1629,22 @@ func TestComponentReadResourceOutputCanBeHydratedByComponent(t *testing.T) {
 
 						state, _, err := rm.Invoke(
 							"pulumi:pulumi:getResource",
-							resource.PropertyMap{
+							resource.FromResourcePropertyMap(resource.PropertyMap{
 								"urn": resource.NewProperty(string(customResRef.URN)),
-							},
+							}),
 							"", /*provider*/
 							"", /*version*/
 							"", /*packageRef*/
 						)
 						require.NoError(t, err)
 
-						stateProvider := state["provider"].StringValue()
+						stateMap := resource.ToResourcePropertyMap(state)
+			stateProvider := stateMap["provider"].StringValue()
 						stateProviderRef, err := providers.ParseReference(stateProvider)
 						require.NoError(t, err)
 						require.Equal(t, stateProviderRef.URN().Name(), "default")
 						require.Equal(t, stateProviderRef.URN().Type().String(), "pulumi:providers:pkgA")
-						delete(state, "provider")
+						delete(stateMap, "provider")
 
 						require.Equal(
 							t,
@@ -1651,7 +1655,7 @@ func TestComponentReadResourceOutputCanBeHydratedByComponent(t *testing.T) {
 									"foo": resource.NewProperty("bar"),
 								}),
 							},
-							state,
+							stateMap,
 						)
 
 						return plugin.ConstructResponse{
@@ -1674,9 +1678,9 @@ func TestComponentReadResourceOutputCanBeHydratedByComponent(t *testing.T) {
 
 		_, err = monitor.RegisterResource("pkgA:index:Component2", "component2", false, deploytest.ResourceOptions{
 			Remote: true,
-			Inputs: resource.PropertyMap{
-				"custom": component1.Outputs["custom"],
-			},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
+				"custom": resource.ToResourcePropertyMap(component1.Outputs)["custom"],
+			}),
 		})
 		require.NoError(t, err)
 
@@ -1729,7 +1733,7 @@ func TestCallSelfProvider(t *testing.T) {
 		}
 
 		prov, err := monitor.RegisterResource("pulumi:providers:pkgA", "prov", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
@@ -1752,7 +1756,7 @@ func TestCallSelfProvider(t *testing.T) {
 			}),
 		}
 
-		resp, _, _, err := monitor.Call("pkgA:m:typA/method", args, nil, "", "", "", "", nil, "")
+		resp, _, _, err := monitor.Call("pkgA:m:typA/method", resource.FromResourcePropertyMap(args), nil, "", "", "", "", nil, "")
 		require.NoError(t, err)
 
 		assert.Equal(t, resource.PropertyMap{

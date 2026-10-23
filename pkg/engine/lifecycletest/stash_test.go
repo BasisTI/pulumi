@@ -32,12 +32,12 @@ func TestStashImport(t *testing.T) {
 	input := resource.NewProperty("from-program")
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pulumi:index:Stash", "stash", true, deploytest.ResourceOptions{
-			Inputs:   resource.PropertyMap{"input": input},
+			Inputs:   resource.FromResourcePropertyMap(resource.PropertyMap{"input": input}),
 			ImportID: "someid",
 		})
 		require.NoError(t, err)
 		require.Equal(t, resource.ID("someid"), resp.ID)
-		require.Equal(t, input, resp.Outputs["input"])
+		require.Equal(t, input, resource.ToResourcePropertyValue(resp.Outputs.Get("input")))
 
 		return nil
 	})
@@ -65,13 +65,13 @@ func TestStash(t *testing.T) {
 	expectedOutput := input
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pulumi:index:Stash", "stash", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": input,
-			},
+			}),
 		})
 		require.NoError(t, err)
-		require.Equal(t, input, resp.Outputs["input"])
-		require.Equal(t, expectedOutput, resp.Outputs["output"])
+		require.Equal(t, input, resource.ToResourcePropertyValue(resp.Outputs.Get("input")))
+		require.Equal(t, expectedOutput, resource.ToResourcePropertyValue(resp.Outputs.Get("output")))
 
 		return nil
 	})

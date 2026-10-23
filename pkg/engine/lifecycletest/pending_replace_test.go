@@ -29,6 +29,7 @@ import (
 	"github.com/pulumi/pulumi/pkg/v3/resource/deploy/deploytest"
 	"github.com/pulumi/pulumi/pkg/v3/resource/plugin"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 )
 
 // Tests that a delete-before-replace operation:
@@ -1032,12 +1033,12 @@ func TestPendingReplaceDependentDeleteNotRetried(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		dbr := true
 		respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:              inputsA,
+			Inputs:              resource.FromResourcePropertyMap(inputsA),
 			DeleteBeforeReplace: &dbr,
 		})
 		if err == nil {
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-				Inputs:       resource.NewPropertyMapFromMap(map[string]any{"A": "value"}),
+				Inputs:       property.NewMap(map[string]property.Value{"A": property.New("value")}),
 				Dependencies: []resource.URN{respA.URN},
 				PropertyDeps: map[resource.PropertyKey][]resource.URN{"A": {respA.URN}},
 			})
@@ -1184,12 +1185,12 @@ func TestPendingReplaceDependentResumeAfterReplacement(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		dbr := true
 		respA, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs:              inputsA,
+			Inputs:              resource.FromResourcePropertyMap(inputsA),
 			DeleteBeforeReplace: &dbr,
 		})
 		require.NoError(t, err)
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs:       resource.NewPropertyMapFromMap(map[string]any{"A": "value"}),
+			Inputs:       property.NewMap(map[string]property.Value{"A": property.New("value")}),
 			Dependencies: []resource.URN{respA.URN},
 			PropertyDeps: map[resource.PropertyKey][]resource.URN{"A": {respA.URN}},
 		})

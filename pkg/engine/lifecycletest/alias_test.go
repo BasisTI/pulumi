@@ -35,6 +35,7 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/common/resource"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
+	"github.com/pulumi/pulumi/sdk/v3/go/property"
 	pulumirpc "github.com/pulumi/pulumi/sdk/v3/proto/go"
 )
 
@@ -151,7 +152,7 @@ func registerResources(t *testing.T, monitor *deploytest.ResourceMonitor, resour
 		_, err := monitor.RegisterResource(r.t, r.name, true, deploytest.ResourceOptions{
 			Parent:              r.parent,
 			Dependencies:        r.dependencies,
-			Inputs:              r.props,
+			Inputs:              resource.FromResourcePropertyMap(r.props),
 			DeleteBeforeReplace: &r.deleteBeforeReplace,
 			AliasURNs:           r.aliasURNs,
 			Aliases:             aliasesFromAliases(r.aliases),
@@ -1457,8 +1458,8 @@ func TestComponentToCustomUpdate(t *testing.T) {
 		}, deploytest.WithoutGrpc),
 	}
 
-	insA := resource.NewPropertyMapFromMap(map[string]any{
-		"foo": "bar",
+	insA := property.NewMap(map[string]property.Value{
+		"foo": property.New("bar"),
 	})
 	createA := func(monitor *deploytest.ResourceMonitor) {
 		_, err := monitor.RegisterResource("prog::myType", "resA", false, deploytest.ResourceOptions{

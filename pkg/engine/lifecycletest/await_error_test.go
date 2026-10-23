@@ -130,7 +130,7 @@ func TestAwaitErrorUpdate(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "awaiting", true, deploytest.ResourceOptions{
 			SupportsResultReporting: true,
-			Inputs:                  resource.PropertyMap{"in": resource.NewProperty("v2")},
+			Inputs:                  resource.FromResourcePropertyMap(resource.PropertyMap{"in": resource.NewProperty("v2")}),
 		})
 		require.NoError(t, err)
 		assert.Equal(t, pulumirpc.Result_FAIL, resp.Result)

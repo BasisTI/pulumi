@@ -283,9 +283,9 @@ func TestReplacementParameterizedProvider(t *testing.T) {
 		}, mlcB.Dependencies)
 
 		// Test invoking a function on the replacement provider
-		result, _, err := monitor.Invoke("pkgExt:index:func", resource.PropertyMap{
+		result, _, err := monitor.Invoke("pkgExt:index:func", resource.FromResourcePropertyMap(resource.PropertyMap{
 			"input": resource.NewProperty("in"),
-		}, "", "", extRef)
+		}), "", "", extRef)
 		require.NoError(t, err)
 		assert.Equal(t, resource.PropertyMap{
 			"output": resource.NewProperty("in replacement"),
@@ -297,7 +297,7 @@ func TestReplacementParameterizedProvider(t *testing.T) {
 			"resC",
 			"id",
 			"",
-			resource.PropertyMap{},
+			resource.FromResourcePropertyMap(resource.PropertyMap{}),
 			"",
 			"",
 			"",
@@ -310,9 +310,9 @@ func TestReplacementParameterizedProvider(t *testing.T) {
 		// Test calling a function on the replacement provider
 		callOuts, callDeps, callFailures, err := monitor.Call(
 			"pkgExt:index:call",
-			resource.PropertyMap{
+			resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": resource.NewProperty("in"),
-			},
+			}),
 			map[resource.PropertyKey][]resource.URN{
 				"input": {"urn:pulumi:stack::m::typA::resB"},
 			},
@@ -573,9 +573,9 @@ func TestReplacementParameterizedProviderImport(t *testing.T) {
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
 			PackageRef: pkgRef,
 			ImportID:   "idA",
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": resource.NewProperty("input"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
@@ -591,9 +591,9 @@ func TestReplacementParameterizedProviderImport(t *testing.T) {
 		_, err = monitor.RegisterResource("pkgExt:m:typA", "resB", true, deploytest.ResourceOptions{
 			PackageRef: extRef,
 			ImportID:   "idB",
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": resource.NewProperty("input"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
@@ -609,9 +609,9 @@ func TestReplacementParameterizedProviderImport(t *testing.T) {
 		_, err = monitor.RegisterResource("pkgExt:m:typA", "resC", true, deploytest.ResourceOptions{
 			Provider: provRef.String(),
 			ImportID: "idB",
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": resource.NewProperty("input"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 

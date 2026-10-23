@@ -129,7 +129,7 @@ func TestExternalRefresh(t *testing.T) {
 			"resA",
 			"resA-some-id",
 			"",
-			resource.PropertyMap{},
+			property.Map{},
 			"",
 			"",
 			"",
@@ -206,7 +206,7 @@ func TestExternalRefreshDoesNotCallDiff(t *testing.T) {
 			"resA",
 			"resA-some-id",
 			"",
-			resource.PropertyMap{},
+			property.Map{},
 			"",
 			"",
 			"",
@@ -1323,15 +1323,15 @@ func TestRefreshWithProgram(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time the read outputs
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
-			assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, readOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -1406,12 +1406,12 @@ func TestRefreshWithProviderThatHasDependencies(t *testing.T) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		programExecutions++
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
 
 		resp, err = monitor.RegisterResource("pulumi:providers:pkgA", "resX", true, deploytest.ResourceOptions{
-			Inputs:       resource.ToResourcePropertyMap(programInputs),
+			Inputs:       programInputs,
 			Dependencies: []resource.URN{resp.URN},
 		})
 		require.NoError(t, err)
@@ -1420,7 +1420,7 @@ func TestRefreshWithProviderThatHasDependencies(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typB", "resB", true, deploytest.ResourceOptions{
-			Inputs:   resource.ToResourcePropertyMap(programInputs),
+			Inputs:   programInputs,
 			Provider: ref.String(),
 		})
 		require.NoError(t, err)
@@ -1428,7 +1428,7 @@ func TestRefreshWithProviderThatHasDependencies(t *testing.T) {
 		var dep map[resource.PropertyKey][]resource.URN
 		if programExecutions > 2 {
 			resp, err = monitor.RegisterResource("pkgA:m:typB", "resC", true, deploytest.ResourceOptions{
-				Inputs: resource.PropertyMap{"foo": resource.NewProperty("baz")},
+				Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("baz")}),
 			})
 			require.NoError(t, err)
 			dep = map[resource.PropertyKey][]resource.URN{
@@ -1439,7 +1439,7 @@ func TestRefreshWithProviderThatHasDependencies(t *testing.T) {
 		// First run this doesn't depend on anything, on the second refresh it will try to depend on "resB"
 		// which is skipped.
 		_, err = monitor.RegisterResource("pkgA:m:typC", "resD", true, deploytest.ResourceOptions{
-			Inputs:       resource.PropertyMap{"foo": resource.NewProperty("baz")},
+			Inputs:       resource.FromResourcePropertyMap(resource.PropertyMap{"foo": resource.NewProperty("baz")}),
 			PropertyDeps: dep,
 		})
 		require.NoError(t, err)
@@ -1556,7 +1556,7 @@ func TestRefreshWithProgramUpdateExplicitProvider(t *testing.T) {
 		programExecutions++
 
 		prov, err := monitor.RegisterResource("pulumi:providers:pkgA", "prov", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{"auth": expectedAuth},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"auth": expectedAuth}),
 		})
 		require.NoError(t, err)
 
@@ -1565,15 +1565,15 @@ func TestRefreshWithProgramUpdateExplicitProvider(t *testing.T) {
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
 			Provider: provRef.String(),
-			Inputs:   resource.ToResourcePropertyMap(programInputs),
+			Inputs:   programInputs,
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time the read outputs
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
-			assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, readOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -1694,15 +1694,15 @@ func TestRefreshWithProgramUpdateDefaultProvider(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time the read outputs
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
-			assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, readOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -1832,11 +1832,11 @@ func TestRefreshWithProgramUpdateDefaultProviderWithoutRegistration(t *testing.T
 			// First time we should register the resource and see the create outputs, second time we don't
 			// send a registration.
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.ToResourcePropertyMap(programInputs),
+				Inputs: programInputs,
 			})
 			require.NoError(t, err)
 
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -1956,29 +1956,29 @@ func TestRefreshWithProgramWithDeletedResource(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time we should see nothing because it will be deleted
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
 			assert.Equal(t, resource.ID(""), resp.ID)
 			assert.Empty(t, resp.Outputs)
 		}
 
 		resp, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs:       resource.ToResourcePropertyMap(programInputs),
+			Inputs:       programInputs,
 			Dependencies: []resource.URN{resp.URN},
 		})
 		require.NoError(t, err)
 
 		// First time we should see the create outputs, second time the read outputs
 		if programExecutions == 1 {
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
-			assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, readOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -2082,15 +2082,15 @@ func TestRefreshWithBigProgram(t *testing.T) {
 			resp, err := monitor.RegisterResource(
 				"pkgA:m:typA", "resA"+strconv.FormatInt(int64(i), 10), true,
 				deploytest.ResourceOptions{
-					Inputs: resource.ToResourcePropertyMap(programInputs),
+					Inputs: programInputs,
 				})
 			require.NoError(t, err)
 
 			// First time we should see the create outputs, second time the read outputs
 			if programExecutions == 1 {
-				assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+				assert.Equal(t, createOutputs, resp.Outputs)
 			} else {
-				assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+				assert.Equal(t, readOutputs, resp.Outputs)
 			}
 		}
 
@@ -2200,14 +2200,14 @@ func TestRefreshWithAlias(t *testing.T) {
 		// First time we should see the create outputs, second time the read outputs
 		if programExecutions == 1 {
 			resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.ToResourcePropertyMap(programInputs),
+				Inputs: programInputs,
 			})
 			require.NoError(t, err)
-			assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, createOutputs, resp.Outputs)
 		} else {
 			// Register the resource with a different type, but with an alias.
 			resp, err := monitor.RegisterResource("pkgA:m:typB", "resA", true, deploytest.ResourceOptions{
-				Inputs: resource.ToResourcePropertyMap(programInputs),
+				Inputs: programInputs,
 				Aliases: []*pulumirpc.Alias{{
 					Alias: &pulumirpc.Alias_Spec_{
 						Spec: &pulumirpc.Alias_Spec{
@@ -2217,7 +2217,7 @@ func TestRefreshWithAlias(t *testing.T) {
 				}},
 			})
 			require.NoError(t, err)
-			assert.Equal(t, readOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+			assert.Equal(t, readOutputs, resp.Outputs)
 		}
 
 		return nil
@@ -2314,10 +2314,10 @@ func TestRefreshRunProgramDeletedResource(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+		assert.Equal(t, createOutputs, resp.Outputs)
 
 		return nil
 	})
@@ -2430,17 +2430,17 @@ func TestRefreshRunProgramDBRReplacedResource(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+		assert.Equal(t, createOutputs, resp.Outputs)
 
 		resp, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
 			Inputs:       resp.Outputs,
 			Dependencies: []resource.URN{resp.URN},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, createOutputs, resource.FromResourcePropertyMap(resp.Outputs))
+		assert.Equal(t, createOutputs, resp.Outputs)
 
 		return nil
 	})
@@ -2551,10 +2551,10 @@ func TestRefreshRunProgramReplacedResource(t *testing.T) {
 		programExecutions++
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.ToResourcePropertyMap(programInputs),
+			Inputs: programInputs,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, programInputs, resource.FromResourcePropertyMap(resp.Outputs))
+		assert.Equal(t, programInputs, resp.Outputs)
 
 		return nil
 	})
@@ -3045,7 +3045,7 @@ func TestRefreshPreservesInputsWhenReadReturnsNoInputs(t *testing.T) {
 
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: updatedInputs,
+			Inputs: resource.FromResourcePropertyMap(updatedInputs),
 		})
 		require.NoError(t, err)
 

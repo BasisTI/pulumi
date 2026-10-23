@@ -107,7 +107,7 @@ func TestRefreshBeforeUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: inputs,
+			Inputs: resource.FromResourcePropertyMap(inputs),
 		})
 		require.NoError(t, err)
 
@@ -285,16 +285,16 @@ func TestRefreshBeforeUpdateDeletedResource(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := monitor.RegisterResource("pkgA:m:typA", "res0", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"input": resource.NewProperty("value"),
-			},
+			}),
 		})
 		require.NoError(t, err)
 
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
-				"input": resp.Outputs["result"],
-			},
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
+				"input": resource.ToResourcePropertyValue(resp.Outputs.Get("result")),
+			}),
 			PropertyDeps: map[resource.PropertyKey][]resource.URN{
 				"input": {resp.URN},
 			},

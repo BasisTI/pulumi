@@ -91,7 +91,7 @@ func testHideDiffs(t *testing.T, detailedDiff bool) {
 	programF := deploytest.NewLanguageRuntimeF(func(_ plugin.RunInfo, monitor *deploytest.ResourceMonitor) error {
 		// This resource checks that we behave correctly when all updating fields are hidden.
 		_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"scalar": propValue,
 				"array": resource.NewProperty([]resource.PropertyValue{
 					propValue,
@@ -99,7 +99,7 @@ func testHideDiffs(t *testing.T, detailedDiff bool) {
 				"map": resource.NewProperty(resource.PropertyMap{
 					"k": propValue,
 				}),
-			},
+			}),
 			HideDiffs: []resource.PropertyPath{
 				{"array"},
 				{"map"},
@@ -111,7 +111,7 @@ func testHideDiffs(t *testing.T, detailedDiff bool) {
 		// This resource checks that diff behaves correctly when both hidden and
 		// non-hidden fields are diffed.
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resB", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"scalar": propValue,
 				"array": resource.NewProperty([]resource.PropertyValue{
 					propValue,
@@ -119,7 +119,7 @@ func testHideDiffs(t *testing.T, detailedDiff bool) {
 				"map": resource.NewProperty(resource.PropertyMap{
 					"k": propValue,
 				}),
-			},
+			}),
 			HideDiffs: []resource.PropertyPath{
 				{"array"},
 				{"map"},
@@ -129,9 +129,9 @@ func testHideDiffs(t *testing.T, detailedDiff bool) {
 
 		// This resource checks that hidden but non-changed fields don't show as a hidden diff.
 		_, err = monitor.RegisterResource("pkgA:m:typA", "resC", true, deploytest.ResourceOptions{
-			Inputs: resource.PropertyMap{
+			Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{
 				"scalar": resource.NewProperty("fixed"),
-			},
+			}),
 			HideDiffs: []resource.PropertyPath{
 				{"scalar"},
 			},

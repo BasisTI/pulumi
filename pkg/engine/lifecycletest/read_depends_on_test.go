@@ -104,7 +104,7 @@ func TestReadDependsOnOrdering(t *testing.T) {
 			name: "dependsOn new resource",
 			program: func(t *testing.T, monitor *deploytest.ResourceMonitor) error {
 				src, err := monitor.RegisterResource("pkgA:m:typA", "src", true, deploytest.ResourceOptions{
-					Inputs: resource.PropertyMap{"value": resource.NewProperty(true)},
+					Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.NewProperty(true)}),
 				})
 				require.NoError(t, err)
 				_, err = monitor.Client().ReadResource(t.Context(), &pulumirpc.ReadResourceRequest{
@@ -120,14 +120,14 @@ func TestReadDependsOnOrdering(t *testing.T) {
 			name: "dependsOn resource being replaced",
 			prime: func(t *testing.T, monitor *deploytest.ResourceMonitor) error {
 				_, err := monitor.RegisterResource("pkgA:m:typA", "src", true, deploytest.ResourceOptions{
-					Inputs: resource.PropertyMap{"value": resource.NewProperty(true)},
+					Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.NewProperty(true)}),
 				})
 				return err
 			},
 			program: func(t *testing.T, monitor *deploytest.ResourceMonitor) error {
 				// Changing src's input triggers Diff → replace (per diffReplace).
 				src, err := monitor.RegisterResource("pkgA:m:typA", "src", true, deploytest.ResourceOptions{
-					Inputs: resource.PropertyMap{"value": resource.NewProperty(false)},
+					Inputs: resource.FromResourcePropertyMap(resource.PropertyMap{"value": resource.NewProperty(false)}),
 				})
 				require.NoError(t, err)
 				_, err = monitor.Client().ReadResource(t.Context(), &pulumirpc.ReadResourceRequest{

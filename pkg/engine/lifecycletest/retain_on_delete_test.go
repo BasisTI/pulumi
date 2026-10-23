@@ -75,7 +75,7 @@ func TestRetainOnDelete(t *testing.T) {
 		if createResource {
 			retainOnDelete := true
 			_, err := monitor.RegisterResource("pkgA:m:typA", "resA", true, deploytest.ResourceOptions{
-				Inputs:         ins,
+				Inputs:         resource.FromResourcePropertyMap(ins),
 				RetainOnDelete: &retainOnDelete,
 			})
 			require.NoError(t, err)

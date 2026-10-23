@@ -734,7 +734,7 @@ func TestRemoteComponentGolang(t *testing.T) {
 
 					outs := resource.PropertyMap{}
 
-					err = monitor.RegisterResourceOutputs(resp.URN, outs)
+					err = monitor.RegisterResourceOutputs(resp.URN, resource.FromResourcePropertyMap(outs))
 					require.NoError(t, err)
 
 					return plugin.ConstructResponse{
