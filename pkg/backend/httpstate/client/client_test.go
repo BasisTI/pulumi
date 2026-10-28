@@ -2728,6 +2728,26 @@ func TestCreateStackUnmanagedEnvironment(t *testing.T) {
 	assert.Nil(t, stack.ManagedEnvironment)
 }
 
+func TestCreatePolicyExceptionExisted(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		status  int
+		existed bool
+	}{{http.StatusCreated, false}, {http.StatusOK, true}} {
+		server := newMockServerRequestProcessor(tt.status, func(*http.Request) string {
+			return `{"id": "EXC-7", "policyPack": "aws"}`
+		})
+		client := NewClient(server.URL, "token", true, nil)
+
+		got, existed, err := client.CreatePolicyException(t.Context(), "org", apitype.CreatePolicyExceptionRequest{})
+		server.Close()
+		require.NoError(t, err)
+		assert.Equal(t, "EXC-7", got.ID)
+		assert.Equal(t, tt.existed, existed, "status %d", tt.status)
+	}
+}
+
 func TestPolicyExceptionRequests(t *testing.T) {
 	t.Parallel()
 
@@ -2753,8 +2773,9 @@ func TestPolicyExceptionRequests(t *testing.T) {
 		ContinuationToken: "next",
 	})
 	require.NoError(t, err)
-	_, err = client.CreatePolicyException(ctx, "org", apitype.CreatePolicyExceptionRequest{PolicyPack: "aws"})
+	_, existed, err := client.CreatePolicyException(ctx, "org", apitype.CreatePolicyExceptionRequest{PolicyPack: "aws"})
 	require.NoError(t, err)
+	assert.True(t, existed)
 	_, err = client.GetPolicyException(ctx, "org", "EXC-1")
 	require.NoError(t, err)
 	require.NoError(t, client.RemovePolicyException(ctx, "org", "EXC-1"))
