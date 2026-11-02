@@ -1800,8 +1800,12 @@ func (ctx *Context) registerResource(
 		// Collect all the hooks, waiting for their registrations.
 		var hooks *pulumirpc.RegisterResourceRequest_ResourceHooksBinding
 		if options.Hooks != nil {
-			mHooks, hooksErr := marshalResourceHooks(ctx.ctx, options.Hooks)
-			if hooksErr != nil {
+			// Assign to the outer err: the deferred resolve/endRPC above only see that variable. Dropping
+			// the error here would skip the registration and still report success, silently omitting
+			// the resource from the program.
+			var mHooks *pulumirpc.RegisterResourceRequest_ResourceHooksBinding
+			mHooks, err = marshalResourceHooks(ctx.ctx, options.Hooks)
+			if err != nil {
 				logging.V(9).Infof("marshalResourceHooks(%s, %s): error: %v", t, name, err)
 				return
 			}
